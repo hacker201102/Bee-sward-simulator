@@ -1,24 +1,24 @@
--- Script pour faire danser ton personnage
-
 local player = game.Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local humanoid = character:WaitForChild("Humanoid")
+local char = player.Character or player.CharacterAdded:Wait()
+local noclip = false
 
--- Créer l'animation
-local animation = Instance.new("Animation")
-animation.AnimationId = "rbxassetid://507771019" -- Dance Animation
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
--- Vérifier ou créer un Animator
-local animator = humanoid:FindFirstChildOfClass("Animator")
-if not animator then
-    animator = Instance.new("Animator")
-    animator.Parent = humanoid
-end
+RunService.Stepped:Connect(function()
+    if noclip and char then
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end
+end)
 
--- Charger et jouer l'animation
-local track = animator:LoadAnimation(animation)
-track:Play()
-
--- Optionnel : arrêter après 10 secondes
--- task.wait(10)
--- track:Stop()
+UIS.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.N then
+        noclip = not noclip
+        print("NoClip :", noclip and "ON" or "OFF")
+    end
+end)
