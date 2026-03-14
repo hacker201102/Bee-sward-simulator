@@ -1,189 +1,147 @@
--- ESP Script (Roblox Lua)
+-- LocalScript à placer dans StarterPlayerScripts ou StarterGui
+
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local localPlayer = Players.LocalPlayer
-local camera = workspace.CurrentCamera
+local LocalPlayer = Players.LocalPlayer
 
--- Configuration
-local ESP_CONFIG = {
-    BoxESP = true,
-    NameESP = true,
-    HealthESP = true,
-    TeamCheck = false,
-    BoxColor = Color3.fromRGB(255, 0, 0),
-    FriendColor = Color3.fromRGB(0, 255, 0),
-    TextColor = Color3.fromRGB(255, 255, 255),
-    MaxDistance = 1000,
-}
+-- Création de l'interface graphique
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "TeleportMenu"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
--- Stockage des drawings
-local espObjects = {}
+-- Bouton pour ouvrir/fermer le menu
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Name = "ToggleButton"
+ToggleButton.Size = UDim2.new(0, 150, 0, 40)
+ToggleButton.Position = UDim2.new(0, 10, 0.5, -20)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleButton.Text = "📍 Téléporter"
+ToggleButton.TextSize = 16
+ToggleButton.Font = Enum.Font.GothamBold
+ToggleButton.Parent = ScreenGui
 
--- Fonctions utilitaires
-local function createDrawing(type, props)
-    local obj = Drawing.new(type)
-    for k, v in pairs(props) do obj[k] = v end
-    return obj
+local UICorner0 = Instance.new("UICorner")
+UICorner0.CornerRadius = UDim.new(0, 8)
+UICorner0.Parent = ToggleButton
+
+-- Fenêtre principale du menu
+local MenuFrame = Instance.new("Frame")
+MenuFrame.Name = "MenuFrame"
+MenuFrame.Size = UDim2.new(0, 250, 0, 350)
+MenuFrame.Position = UDim2.new(0, 170, 0.5, -175)
+MenuFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MenuFrame.BorderSizePixel = 0
+MenuFrame.Visible = false
+MenuFrame.Parent = ScreenGui
+
+local UICorner1 = Instance.new("UICorner")
+UICorner1.CornerRadius = UDim.new(0, 10)
+UICorner1.Parent = MenuFrame
+
+-- Titre du menu
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, 0, 0, 45)
+Title.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Text = "🎯 Choisir un joueur"
+Title.TextSize = 16
+Title.Font = Enum.Font.GothamBold
+Title.Parent = MenuFrame
+
+local UICorner2 = Instance.new("UICorner")
+UICorner2.CornerRadius = UDim.new(0, 10)
+UICorner2.Parent = Title
+
+-- Zone scrollable pour la liste des joueurs
+local ScrollFrame = Instance.new("ScrollingFrame")
+ScrollFrame.Size = UDim2.new(1, -10, 1, -55)
+ScrollFrame.Position = UDim2.new(0, 5, 0, 50)
+ScrollFrame.BackgroundTransparency = 1
+ScrollFrame.ScrollBarThickness = 4
+ScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(0, 120, 215)
+ScrollFrame.Parent = MenuFrame
+
+local ListLayout = Instance.new("UIListLayout")
+ListLayout.Padding = UDim.new(0, 5)
+ListLayout.Parent = ScrollFrame
+
+-- Fonction de téléportation
+local function teleportToPlayer(targetPlayer)
+	local character = LocalPlayer.Character
+	local targetCharacter = targetPlayer.Character
+
+	if not character or not targetCharacter then
+		warn("Personnage introuvable !")
+		return
+	end
+
+	local targetRootPart = targetCharacter:FindFirstChild("HumanoidRootPart")
+	local rootPart = character:FindFirstChild("HumanoidRootPart")
+
+	if targetRootPart and rootPart then
+		-- Décalage léger pour ne pas spawner dans le joueur
+		local offset = Vector3.new(3, 0, 0)
+		rootPart.CFrame = targetRootPart.CFrame + offset
+		print("Téléporté vers " .. targetPlayer.Name)
+	end
 end
 
-local function getCharacterParts(character)
-    local rootPart = character:FindFirstChild("HumanoidRootPart")
-    local humanoid = character:FindFirstChild("Humanoid")
-    local head = character:FindFirstChild("Head")
-    return rootPart, humanoid, head
+-- Fonction pour créer un bouton joueur
+local function createPlayerButton(player)
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(1, 0, 0, 45)
+	btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+	btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	btn.Text = "👤 " .. player.Name
+	btn.TextSize = 14
+	btn.Font = Enum.Font.Gotham
+	btn.Parent = ScrollFrame
+
+	local UICornerBtn = Instance.new("UICorner")
+	UICornerBtn.CornerRadius = UDim.new(0, 6)
+	UICornerBtn.Parent = btn
+
+	-- Hover effect
+	btn.MouseEnter:Connect(function()
+		btn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+	end)
+	btn.MouseLeave:Connect(function()
+		btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+	end)
+
+	btn.MouseButton1Click:Connect(function()
+		teleportToPlayer(player)
+		MenuFrame.Visible = false
+	end)
+
+	return btn
 end
 
-local function worldToViewport(position)
-    local screenPos, onScreen = camera:WorldToViewportPoint(position)
-    return Vector2.new(screenPos.X, screenPos.Y), onScreen, screenPos.Z
+-- Fonction pour rafraîchir la liste des joueurs
+local function refreshPlayerList()
+	-- Supprimer les anciens boutons
+	for _, child in pairs(ScrollFrame:GetChildren()) do
+		if child:IsA("TextButton") then
+			child:Destroy()
+		end
+	end
+
+	-- Ajouter les joueurs (sauf soi-même)
+	for _, player in pairs(Players:GetPlayers()) do
+		if player ~= LocalPlayer then
+			createPlayerButton(player)
+		end
+	end
+
+	-- Mettre à jour la taille du ScrollFrame
+	ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, ListLayout.AbsoluteContentSize.Y + 5)
 end
 
-local function getBoxBounds(character)
-    local rootPart = character:FindFirstChild("HumanoidRootPart")
-    if not rootPart then return nil end
-
-    local pos = rootPart.Position
-    local topPos, topOnScreen = worldToViewport(pos + Vector3.new(0, 3, 0))
-    local botPos, botOnScreen = worldToViewport(pos + Vector3.new(0, -3, 0))
-
-    if not topOnScreen and not botOnScreen then return nil end
-
-    local height = math.abs(topPos.Y - botPos.Y)
-    local width = height * 0.6
-
-    return {
-        X = botPos.X - width / 2,
-        Y = topPos.Y,
-        Width = width,
-        Height = height,
-    }
-end
-
--- Création des éléments ESP pour un joueur
-local function createESP(player)
-    local obj = {
-        Box = createDrawing("Square", {
-            Visible = false, Thickness = 1.5,
-            Color = ESP_CONFIG.BoxColor, Filled = false
-        }),
-        Name = createDrawing("Text", {
-            Visible = false, Size = 14, Center = true,
-            Color = ESP_CONFIG.TextColor, Outline = true
-        }),
-        HealthBar = createDrawing("Square", {
-            Visible = false, Thickness = 1,
-            Color = Color3.fromRGB(0, 255, 0), Filled = true
-        }),
-        HealthBarBg = createDrawing("Square", {
-            Visible = false, Thickness = 1,
-            Color = Color3.fromRGB(50, 50, 50), Filled = true
-        }),
-    }
-    espObjects[player] = obj
-end
-
--- Suppression des éléments ESP
-local function removeESP(player)
-    if espObjects[player] then
-        for _, drawing in pairs(espObjects[player]) do
-            drawing:Remove()
-        end
-        espObjects[player] = nil
-    end
-end
-
--- Mise à jour de l'ESP
-local function updateESP()
-    for _, player in pairs(Players:GetPlayers()) do
-        if player == localPlayer then continue end
-
-        local obj = espObjects[player]
-        if not obj then continue end
-
-        local character = player.Character
-        if not character then
-            for _, d in pairs(obj) do d.Visible = false end
-            continue
-        end
-
-        local rootPart, humanoid, head = getCharacterParts(character)
-        if not rootPart or not humanoid or humanoid.Health <= 0 then
-            for _, d in pairs(obj) do d.Visible = false end
-            continue
-        end
-
-        -- Vérification de la distance
-        local distance = (rootPart.Position - camera.CFrame.Position).Magnitude
-        if distance > ESP_CONFIG.MaxDistance then
-            for _, d in pairs(obj) do d.Visible = false end
-            continue
-        end
-
-        -- Vérification d'équipe
-        local color = ESP_CONFIG.BoxColor
-        if ESP_CONFIG.TeamCheck and player.Team == localPlayer.Team then
-            color = ESP_CONFIG.FriendColor
-        end
-
-        local bounds = getBoxBounds(character)
-        if not bounds then
-            for _, d in pairs(obj) do d.Visible = false end
-            continue
-        end
-
-        -- Box ESP
-        if ESP_CONFIG.BoxESP then
-            obj.Box.Visible = true
-            obj.Box.Color = color
-            obj.Box.Position = Vector2.new(bounds.X, bounds.Y)
-            obj.Box.Size = Vector2.new(bounds.Width, bounds.Height)
-        end
-
-        -- Name ESP
-        if ESP_CONFIG.NameESP then
-            obj.Name.Visible = true
-            obj.Name.Text = player.Name .. " [" .. math.floor(distance) .. "m]"
-            obj.Name.Position = Vector2.new(bounds.X + bounds.Width / 2, bounds.Y - 18)
-        end
-
-        -- Health Bar
-        if ESP_CONFIG.HealthESP then
-            local healthPct = humanoid.Health / humanoid.MaxHealth
-            local barX = bounds.X - 6
-            local barHeight = bounds.Height
-
-            obj.HealthBarBg.Visible = true
-            obj.HealthBarBg.Position = Vector2.new(barX - 1, bounds.Y - 1)
-            obj.HealthBarBg.Size = Vector2.new(4, barHeight + 2)
-
-            obj.HealthBar.Visible = true
-            obj.HealthBar.Color = Color3.fromRGB(
-                255 * (1 - healthPct), 255 * healthPct, 0
-            )
-            obj.HealthBar.Position = Vector2.new(barX, bounds.Y + barHeight * (1 - healthPct))
-            obj.HealthBar.Size = Vector2.new(3, barHeight * healthPct)
-        end
-    end
-end
-
--- Initialisation
-for _, player in pairs(Players:GetPlayers()) do
-    if player ~= localPlayer then
-        createESP(player)
-    end
-end
-
-Players.PlayerAdded:Connect(function(player)
-    player.CharacterAdded:Connect(function()
-        task.wait(0.5)
-        if not espObjects[player] then createESP(player) end
-    end)
-    createESP(player)
+-- Ouvrir/fermer le menu
+ToggleButton.MouseButton1Click:Connect(function()
+	MenuFrame.Visible = not MenuFrame.Visible
+	if MenuFrame.Visible then
+		refreshPlayerList()
+	end
 end)
-
-Players.PlayerRemoving:Connect(removeESP)
-
--- Boucle principale
-RunService.RenderStepped:Connect(updateESP)
-
-print("ESP chargé avec succès !")
