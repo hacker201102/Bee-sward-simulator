@@ -1,6 +1,6 @@
 -- ╔══════════════════════════════════════════════════════════╗
--- ║            NEXUS TELEPORT  —  Mod Menu Premium          ║
--- ║     LocalScript → StarterPlayer > StarterPlayerScripts  ║
+-- ║       NEXUS TELEPORT — Mobile 100% + Chat Avatar 🐱     ║
+-- ║   LocalScript → StarterPlayer > StarterPlayerScripts    ║
 -- ╚══════════════════════════════════════════════════════════╝
 
 local Players      = game:GetService("Players")
@@ -9,37 +9,47 @@ local TweenSvc     = game:GetService("TweenService")
 local LocalPlayer  = Players.LocalPlayer
 
 -- ══════════════════════════════════════
---  PALETTE CYBERPUNK
+--  ⚠️  REMPLACE PAR TON ASSET ID DU CHAT
+--  Studio → Asset Manager → Upload Image → copie l'ID
+-- ══════════════════════════════════════
+local CAT_ID = "rbxassetid://TON_ID_ICI"
+
+-- ══════════════════════════════════════
+--  DÉTECTION MOBILE
+-- ══════════════════════════════════════
+local isMobile = UserInputSvc.TouchEnabled and not UserInputSvc.KeyboardEnabled
+
+-- ══════════════════════════════════════
+--  PALETTE
 -- ══════════════════════════════════════
 local C = {
-	void       = Color3.fromRGB(6,   7,  14),
-	deep       = Color3.fromRGB(10,  11,  22),
-	panel      = Color3.fromRGB(14,  15,  30),
-	glass      = Color3.fromRGB(20,  22,  45),
-	glassHov   = Color3.fromRGB(28,  30,  62),
-	cyan       = Color3.fromRGB(0,  220, 255),
-	cyanDim    = Color3.fromRGB(0,  140, 170),
-	cyanGhost  = Color3.fromRGB(0,   50,  70),
-	gold       = Color3.fromRGB(255, 200,  50),
-	red        = Color3.fromRGB(255,  55,  90),
-	green      = Color3.fromRGB(50,  230, 120),
-	greenDark  = Color3.fromRGB(15,   60,  35),
-	white      = Color3.fromRGB(210, 230, 255),
-	muted      = Color3.fromRGB(80,   95, 140),
-	border     = Color3.fromRGB(30,   35,  70),
-	borderHot  = Color3.fromRGB(0,   180, 210),
+	void      = Color3.fromRGB(6,   7,  14),
+	deep      = Color3.fromRGB(10,  11,  22),
+	glass     = Color3.fromRGB(20,  22,  45),
+	glassHov  = Color3.fromRGB(28,  30,  62),
+	cyan      = Color3.fromRGB(0,  220, 255),
+	cyanDim   = Color3.fromRGB(0,  140, 170),
+	cyanGhost = Color3.fromRGB(0,   50,  70),
+	gold      = Color3.fromRGB(255, 200,  50),
+	red       = Color3.fromRGB(255,  55,  90),
+	green     = Color3.fromRGB(50,  230, 120),
+	greenDark = Color3.fromRGB(15,   60,  35),
+	white     = Color3.fromRGB(210, 230, 255),
+	muted     = Color3.fromRGB(80,   95, 140),
+	border    = Color3.fromRGB(30,   35,  70),
+	borderHot = Color3.fromRGB(0,  180, 210),
 }
 
 -- ══════════════════════════════════════
 --  TWEEN PRESETS
 -- ══════════════════════════════════════
 local TW = {
-	snap   = TweenInfo.new(0.12, Enum.EasingStyle.Quart,   Enum.EasingDirection.Out),
-	smooth = TweenInfo.new(0.22, Enum.EasingStyle.Quart,   Enum.EasingDirection.Out),
-	spring = TweenInfo.new(0.45, Enum.EasingStyle.Back,    Enum.EasingDirection.Out),
-	slow   = TweenInfo.new(0.55, Enum.EasingStyle.Quint,   Enum.EasingDirection.Out),
-	pulse  = TweenInfo.new(1.4,  Enum.EasingStyle.Sine,    Enum.EasingDirection.InOut, -1, true),
-	drift  = TweenInfo.new(2.5,  Enum.EasingStyle.Sine,    Enum.EasingDirection.InOut, -1, true),
+	snap   = TweenInfo.new(0.12, Enum.EasingStyle.Quart,  Enum.EasingDirection.Out),
+	smooth = TweenInfo.new(0.22, Enum.EasingStyle.Quart,  Enum.EasingDirection.Out),
+	spring = TweenInfo.new(0.45, Enum.EasingStyle.Back,   Enum.EasingDirection.Out),
+	slow   = TweenInfo.new(0.55, Enum.EasingStyle.Quint,  Enum.EasingDirection.Out),
+	pulse  = TweenInfo.new(1.4,  Enum.EasingStyle.Sine,   Enum.EasingDirection.InOut, -1, true),
+	drift  = TweenInfo.new(2.5,  Enum.EasingStyle.Sine,   Enum.EasingDirection.InOut, -1, true),
 }
 
 -- ══════════════════════════════════════
@@ -89,6 +99,32 @@ local function newLabel(parent, props)
 	return l
 end
 
+local function newImage(parent, props)
+	local i = Instance.new("ImageLabel")
+	i.BackgroundTransparency = 1
+	for k, v in pairs(props) do i[k] = v end
+	i.Parent = parent
+	return i
+end
+
+-- ══════════════════════════════════════
+--  TAILLES ADAPTATIVES MOBILE/PC
+-- ══════════════════════════════════════
+local WIN_W       = isMobile and UDim2.new(0.88, 0, 0, 0)    or UDim2.new(0, 300, 0, 0)
+local WIN_OPEN    = isMobile and UDim2.new(0.88, 0, 0, 480)   or UDim2.new(0, 300, 0, 460)
+local WIN_POS     = isMobile and UDim2.new(0.06, 0, 0.5, -240) or UDim2.new(0, 80, 0.5, -230)
+local FAB_SIZE    = isMobile and UDim2.new(0, 64, 0, 64)       or UDim2.new(0, 52, 0, 52)
+local FAB_POS     = isMobile and UDim2.new(0, 18, 0.5, -32)    or UDim2.new(0, 16, 0.5, -26)
+local CARD_H      = isMobile and 68                             or 58
+local TITLE_SIZE  = isMobile and 22                             or 20
+local BODY_SIZE   = isMobile and 15                             or 13
+local SMALL_SIZE  = isMobile and 12                             or 10
+local AVATAR_SIZE = isMobile and 44                             or 38
+local BTN_W       = isMobile and 64                             or 52
+local BTN_H       = isMobile and 36                             or 32
+local HEADER_H    = isMobile and 76                             or 68
+local SEARCH_H    = isMobile and 46                             or 38
+
 -- ══════════════════════════════════════
 --  ROOT GUI
 -- ══════════════════════════════════════
@@ -100,47 +136,49 @@ Gui.IgnoreGuiInset = true
 Gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 -- ══════════════════════════════════════
---  FAB (bouton flottant)
+--  FAB BOUTON FLOTTANT
 -- ══════════════════════════════════════
 local fab = Instance.new("TextButton")
-fab.Name = "FAB"
-fab.Size = UDim2.new(0, 52, 0, 52)
-fab.Position = UDim2.new(0, 16, 0.5, -26)
+fab.Name        = "FAB"
+fab.Size        = FAB_SIZE
+fab.Position    = FAB_POS
 fab.BackgroundColor3 = C.cyan
-fab.Text = ""
+fab.Text        = ""
 fab.AutoButtonColor = false
-fab.ZIndex = 20
-fab.Parent = Gui
-corner(fab, 15)
+fab.ZIndex      = 20
+fab.Parent      = Gui
+corner(fab, isMobile and 18 or 15)
 
--- Icône éclair dans le FAB
 local fabIcon = newLabel(fab, {
-	Size = UDim2.new(1,0,1,0),
-	Text = "⚡",
-	TextSize = 24,
-	Font = Enum.Font.GothamBold,
+	Size     = UDim2.new(1, 0, 1, 0),
+	Text     = "⚡",
+	TextSize = isMobile and 28 or 24,
+	Font     = Enum.Font.GothamBold,
 	TextColor3 = C.void,
-	ZIndex = 21,
+	ZIndex   = 21,
 })
 
--- Halo animé autour du FAB
+-- Halo animé
 local fabHalo = newFrame(Gui, {
-	Size = UDim2.new(0, 72, 0, 72),
-	Position = UDim2.new(0, 6, 0.5, -36),
+	Size     = isMobile and UDim2.new(0, 86, 0, 86) or UDim2.new(0, 72, 0, 72),
+	Position = isMobile and UDim2.new(0, 7, 0.5, -43) or UDim2.new(0, 6, 0.5, -36),
 	BackgroundColor3 = C.cyan,
-	BackgroundTransparency = 0.75,
-	ZIndex = 19,
+	BackgroundTransparency = 0.78,
+	ZIndex   = 19,
 })
-corner(fabHalo, 20)
-tw(fabHalo, {BackgroundTransparency = 0.92, Size = UDim2.new(0, 80, 0, 80), Position = UDim2.new(0, 2, 0.5, -40)}, TW.pulse)
+corner(fabHalo, isMobile and 43 or 36)
+tw(fabHalo, {
+	BackgroundTransparency = 0.93,
+	Size     = isMobile and UDim2.new(0, 96, 0, 96) or UDim2.new(0, 80, 0, 80),
+	Position = isMobile and UDim2.new(0, 2, 0.5, -48) or UDim2.new(0, 2, 0.5, -40),
+}, TW.pulse)
 
--- Hover FAB
 fab.MouseEnter:Connect(function()
-	tw(fab, {BackgroundColor3 = C.white, Size = UDim2.new(0, 56, 0, 56), Position = UDim2.new(0, 14, 0.5, -28)})
+	tw(fab, {BackgroundColor3 = C.white})
 	tw(fabIcon, {TextColor3 = C.cyan})
 end)
 fab.MouseLeave:Connect(function()
-	tw(fab, {BackgroundColor3 = C.cyan, Size = UDim2.new(0, 52, 0, 52), Position = UDim2.new(0, 16, 0.5, -26)})
+	tw(fab, {BackgroundColor3 = C.cyan})
 	tw(fabIcon, {TextColor3 = C.void})
 end)
 
@@ -148,123 +186,120 @@ end)
 --  FENÊTRE PRINCIPALE
 -- ══════════════════════════════════════
 local Win = newFrame(Gui, {
-	Name = "Window",
-	Size = UDim2.new(0, 300, 0, 460),
-	Position = UDim2.new(0, 80, 0.5, -230),
+	Name     = "Window",
+	Size     = isMobile and UDim2.new(0.88, 0, 0, 0) or UDim2.new(0, 300, 0, 0),
+	Position = WIN_POS,
 	BackgroundColor3 = C.void,
 	ClipsDescendants = true,
-	Visible = false,
-	ZIndex = 10,
+	Visible  = false,
+	ZIndex   = 10,
 })
-corner(Win, 18)
+corner(Win, 20)
 stroke(Win, C.border, 1)
 
--- Fond dégradé subtil
+-- Fond dégradé
 local winBg = newFrame(Win, {
-	Size = UDim2.new(1,0,1,0),
+	Size     = UDim2.new(1, 0, 1, 0),
 	BackgroundColor3 = C.deep,
-	ZIndex = 10,
+	ZIndex   = 10,
 })
-corner(winBg, 18)
-gradient(winBg, C.void, C.panel, 145)
+corner(winBg, 20)
+gradient(winBg, C.void, Color3.fromRGB(14, 15, 30), 145)
 
--- Lueur top-left décorative
-local cornerGlow = newFrame(Win, {
-	Size = UDim2.new(0, 180, 0, 180),
-	Position = UDim2.new(0, -60, 0, -60),
+-- Lueur déco coin haut-gauche
+local glow1 = newFrame(Win, {
+	Size     = UDim2.new(0, 160, 0, 160),
+	Position = UDim2.new(0, -55, 0, -55),
 	BackgroundColor3 = C.cyan,
 	BackgroundTransparency = 0.88,
-	ZIndex = 11,
+	ZIndex   = 11,
 })
-corner(cornerGlow, 90)
-tw(cornerGlow, {BackgroundTransparency = 0.94}, TW.drift)
+corner(glow1, 80)
+tw(glow1, {BackgroundTransparency = 0.94}, TW.drift)
 
--- Lueur bottom-right décorative
-local cornerGlow2 = newFrame(Win, {
-	Size = UDim2.new(0, 140, 0, 140),
-	Position = UDim2.new(1, -80, 1, -80),
+-- Lueur déco coin bas-droit
+local glow2 = newFrame(Win, {
+	Size     = UDim2.new(0, 120, 0, 120),
+	Position = UDim2.new(1, -70, 1, -70),
 	BackgroundColor3 = C.gold,
-	BackgroundTransparency = 0.92,
-	ZIndex = 11,
+	BackgroundTransparency = 0.91,
+	ZIndex   = 11,
 })
-corner(cornerGlow2, 70)
-tw(cornerGlow2, {BackgroundTransparency = 0.96}, TW.pulse)
+corner(glow2, 60)
+tw(glow2, {BackgroundTransparency = 0.96}, TW.pulse)
 
 -- ══════════════════════════════════════
 --  HEADER
 -- ══════════════════════════════════════
 local header = newFrame(Win, {
-	Name = "Header",
-	Size = UDim2.new(1,0,0,68),
+	Name     = "Header",
+	Size     = UDim2.new(1, 0, 0, HEADER_H),
 	BackgroundColor3 = C.glass,
-	ZIndex = 12,
+	ZIndex   = 12,
 })
 
--- Ligne accent en bas du header
 local headerLine = newFrame(header, {
-	Size = UDim2.new(1,0,0,2),
-	Position = UDim2.new(0,0,1,-2),
+	Size     = UDim2.new(1, 0, 0, 2),
+	Position = UDim2.new(0, 0, 1, -2),
 	BackgroundColor3 = C.cyan,
-	ZIndex = 13,
+	ZIndex   = 13,
 })
 gradient(headerLine, C.cyan, C.cyanGhost, 0)
 
--- Badge icône
+-- Badge icône header
 local badge = newFrame(header, {
-	Size = UDim2.new(0,40,0,40),
-	Position = UDim2.new(0,14,0.5,-20),
+	Size     = UDim2.new(0, isMobile and 46 or 40, 0, isMobile and 46 or 40),
+	Position = UDim2.new(0, 14, 0.5, isMobile and -23 or -20),
 	BackgroundColor3 = C.cyanGhost,
-	ZIndex = 13,
+	ZIndex   = 13,
 })
-corner(badge, 12)
+corner(badge, isMobile and 14 or 12)
 stroke(badge, C.cyan, 1.5)
 
-local badgeIcon = newLabel(badge, {
-	Size = UDim2.new(1,0,1,0),
-	Text = "⚡",
-	TextSize = 20,
-	Font = Enum.Font.GothamBold,
+newLabel(badge, {
+	Size     = UDim2.new(1, 0, 1, 0),
+	Text     = "⚡",
+	TextSize = isMobile and 24 or 20,
+	Font     = Enum.Font.GothamBold,
 	TextColor3 = C.cyan,
-	ZIndex = 14,
+	ZIndex   = 14,
 })
 
--- Titre NEXUS
-local titleMain = newLabel(header, {
-	Size = UDim2.new(1,-115,0,26),
-	Position = UDim2.new(0,62,0,10),
-	Text = "NEXUS",
-	TextSize = 20,
-	Font = Enum.Font.GothamBold,
+newLabel(header, {
+	Size     = UDim2.new(1, -115, 0, isMobile and 28 or 26),
+	Position = UDim2.new(0, isMobile and 70 or 62, 0, isMobile and 10 or 10),
+	Text     = "NEXUS",
+	TextSize = TITLE_SIZE,
+	Font     = Enum.Font.GothamBold,
 	TextColor3 = C.white,
 	TextXAlignment = Enum.TextXAlignment.Left,
-	ZIndex = 13,
+	ZIndex   = 13,
 })
 
--- Sous-titre
-local titleSub = newLabel(header, {
-	Size = UDim2.new(1,-115,0,18),
-	Position = UDim2.new(0,62,0,34),
-	Text = "TELEPORT SYSTEM  v2.0",
-	TextSize = 10,
-	Font = Enum.Font.GothamBold,
+newLabel(header, {
+	Size     = UDim2.new(1, -115, 0, 18),
+	Position = UDim2.new(0, isMobile and 70 or 62, 0, isMobile and 38 or 34),
+	Text     = "TELEPORT SYSTEM  v2.0",
+	TextSize = SMALL_SIZE,
+	Font     = Enum.Font.GothamBold,
 	TextColor3 = C.cyanDim,
 	TextXAlignment = Enum.TextXAlignment.Left,
-	ZIndex = 13,
+	ZIndex   = 13,
 })
 
--- Bouton ✕
+-- Bouton fermer
 local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0,32,0,32)
-closeBtn.Position = UDim2.new(1,-44,0.5,-16)
-closeBtn.BackgroundColor3 = Color3.fromRGB(40,20,28)
-closeBtn.Text = "✕"
-closeBtn.TextSize = 14
-closeBtn.Font = Enum.Font.GothamBold
+closeBtn.Size   = UDim2.new(0, isMobile and 38 or 32, 0, isMobile and 38 or 32)
+closeBtn.Position = UDim2.new(1, isMobile and -50 or -44, 0.5, isMobile and -19 or -16)
+closeBtn.BackgroundColor3 = Color3.fromRGB(40, 20, 28)
+closeBtn.Text   = "✕"
+closeBtn.TextSize = isMobile and 16 or 14
+closeBtn.Font   = Enum.Font.GothamBold
 closeBtn.TextColor3 = C.red
 closeBtn.AutoButtonColor = false
 closeBtn.ZIndex = 14
 closeBtn.Parent = header
-corner(closeBtn, 10)
+corner(closeBtn, 11)
 stroke(closeBtn, C.red, 1)
 
 closeBtn.MouseEnter:Connect(function()
@@ -278,32 +313,32 @@ end)
 --  BARRE DE RECHERCHE
 -- ══════════════════════════════════════
 local searchWrap = newFrame(Win, {
-	Size = UDim2.new(1,-24,0,38),
-	Position = UDim2.new(0,12,0,78),
+	Size     = UDim2.new(1, -24, 0, SEARCH_H),
+	Position = UDim2.new(0, 12, 0, HEADER_H + 10),
 	BackgroundColor3 = C.glass,
-	ZIndex = 12,
+	ZIndex   = 12,
 })
-corner(searchWrap, 12)
+corner(searchWrap, 13)
 local searchStroke = stroke(searchWrap, C.border, 1.5)
 
-local searchEmoji = newLabel(searchWrap, {
-	Size = UDim2.new(0,36,1,0),
-	Text = "🔍",
-	TextSize = 15,
-	Font = Enum.Font.Gotham,
+newLabel(searchWrap, {
+	Size     = UDim2.new(0, isMobile and 42 or 36, 1, 0),
+	Text     = "🔍",
+	TextSize = isMobile and 17 or 15,
+	Font     = Enum.Font.Gotham,
 	TextColor3 = C.muted,
-	ZIndex = 13,
+	ZIndex   = 13,
 })
 
 local searchBox = Instance.new("TextBox")
-searchBox.Size = UDim2.new(1,-44,1,0)
-searchBox.Position = UDim2.new(0,36,0,0)
+searchBox.Size   = UDim2.new(1, isMobile and -50 or -44, 1, 0)
+searchBox.Position = UDim2.new(0, isMobile and 40 or 36, 0, 0)
 searchBox.BackgroundTransparency = 1
 searchBox.PlaceholderText = "Rechercher un joueur…"
 searchBox.PlaceholderColor3 = C.muted
-searchBox.Text = ""
-searchBox.TextSize = 13
-searchBox.Font = Enum.Font.Gotham
+searchBox.Text   = ""
+searchBox.TextSize = BODY_SIZE
+searchBox.Font   = Enum.Font.Gotham
 searchBox.TextColor3 = C.white
 searchBox.TextXAlignment = Enum.TextXAlignment.Left
 searchBox.ClearTextOnFocus = false
@@ -322,99 +357,101 @@ end)
 -- ══════════════════════════════════════
 --  SÉPARATEUR + COMPTEUR
 -- ══════════════════════════════════════
-local sepLine = newFrame(Win, {
-	Size = UDim2.new(1,-24,0,1),
-	Position = UDim2.new(0,12,0,126),
+local sepY = HEADER_H + 10 + SEARCH_H + 10
+
+newFrame(Win, {
+	Size     = UDim2.new(1, -24, 0, 1),
+	Position = UDim2.new(0, 12, 0, sepY),
 	BackgroundColor3 = C.border,
-	ZIndex = 12,
+	ZIndex   = 12,
 })
 
 local countLabel = newLabel(Win, {
-	Size = UDim2.new(1,-24,0,22),
-	Position = UDim2.new(0,12,0,130),
-	Text = "0 JOUEURS EN LIGNE",
-	TextSize = 10,
-	Font = Enum.Font.GothamBold,
+	Size     = UDim2.new(1, -24, 0, 22),
+	Position = UDim2.new(0, 12, 0, sepY + 4),
+	Text     = "0 JOUEURS EN LIGNE",
+	TextSize = SMALL_SIZE,
+	Font     = Enum.Font.GothamBold,
 	TextColor3 = C.muted,
 	TextXAlignment = Enum.TextXAlignment.Left,
-	ZIndex = 12,
+	ZIndex   = 12,
 })
 
 -- ══════════════════════════════════════
 --  SCROLL LIST
 -- ══════════════════════════════════════
+local listTopY = sepY + 28
+
 local scroll = Instance.new("ScrollingFrame")
-scroll.Size = UDim2.new(1,-24,1,-166)
-scroll.Position = UDim2.new(0,12,0,156)
+scroll.Size   = UDim2.new(1, -24, 1, -(listTopY + 8))
+scroll.Position = UDim2.new(0, 12, 0, listTopY)
 scroll.BackgroundTransparency = 1
 scroll.BorderSizePixel = 0
-scroll.ScrollBarThickness = 3
+scroll.ScrollBarThickness = isMobile and 4 or 3
 scroll.ScrollBarImageColor3 = C.cyan
 scroll.ScrollingDirection = Enum.ScrollingDirection.Y
-scroll.CanvasSize = UDim2.new(0,0,0,0)
+scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
 scroll.ZIndex = 12
 scroll.Parent = Win
 
 local listLayout = Instance.new("UIListLayout")
-listLayout.Padding = UDim.new(0,7)
+listLayout.Padding = UDim.new(0, isMobile and 8 or 6)
 listLayout.SortOrder = Enum.SortOrder.LayoutOrder
 listLayout.Parent = scroll
 
--- ══════════════════════════════════════
---  ÉTAT « VIDE »
--- ══════════════════════════════════════
+-- État vide
 local emptyState = newLabel(scroll, {
-	Name = "EmptyState",
-	Size = UDim2.new(1,0,0,80),
-	Text = "😶 Aucun joueur trouvé",
-	TextSize = 13,
-	Font = Enum.Font.Gotham,
+	Name     = "EmptyState",
+	Size     = UDim2.new(1, 0, 0, 80),
+	Text     = "😶 Aucun joueur trouvé",
+	TextSize = BODY_SIZE,
+	Font     = Enum.Font.Gotham,
 	TextColor3 = C.muted,
-	ZIndex = 13,
-	Visible = false,
+	ZIndex   = 13,
+	Visible  = false,
 })
 
 -- ══════════════════════════════════════
---  TOAST NOTIFICATION
+--  TOAST
 -- ══════════════════════════════════════
 local toast = newFrame(Gui, {
-	Name = "Toast",
-	Size = UDim2.new(0,260,0,48),
-	Position = UDim2.new(0.5,-130,1,70),
+	Size     = UDim2.new(0, isMobile and 290 or 260, 0, isMobile and 56 or 48),
+	Position = UDim2.new(0.5, isMobile and -145 or -130, 1, 80),
 	BackgroundColor3 = C.glass,
-	ZIndex = 50,
+	ZIndex   = 50,
 })
-corner(toast, 14)
+corner(toast, 15)
 stroke(toast, C.green, 1.5)
 
 local toastBar = newFrame(toast, {
-	Size = UDim2.new(0,4,0,28),
-	Position = UDim2.new(0,10,0.5,-14),
+	Size     = UDim2.new(0, 4, 0, isMobile and 34 or 28),
+	Position = UDim2.new(0, 12, 0.5, isMobile and -17 or -14),
 	BackgroundColor3 = C.green,
-	ZIndex = 51,
+	ZIndex   = 51,
 })
 corner(toastBar, 2)
 
 local toastText = newLabel(toast, {
-	Size = UDim2.new(1,-30,1,0),
-	Position = UDim2.new(0,22,0,0),
-	Text = "Téléporté avec succès !",
-	TextSize = 13,
-	Font = Enum.Font.GothamBold,
+	Size     = UDim2.new(1, -34, 1, 0),
+	Position = UDim2.new(0, 24, 0, 0),
+	Text     = "Téléporté !",
+	TextSize = isMobile and 14 or 13,
+	Font     = Enum.Font.GothamBold,
 	TextColor3 = C.white,
 	TextXAlignment = Enum.TextXAlignment.Left,
-	ZIndex = 51,
+	ZIndex   = 51,
 })
 
-local function showToast(msg, isError)
-	local col = isError and C.red or C.green
-	tw(toast, {}, TW.snap)
-	stroke(toast, col, 1.5)
+local function showToast(msg, isErr)
+	local col = isErr and C.red or C.green
+	local toastStk = toast:FindFirstChildOfClass("UIStroke")
+	if toastStk then tw(toastStk, {Color = col}) end
 	tw(toastBar, {BackgroundColor3 = col})
 	toastText.Text = msg
-	tw(toast, {Position = UDim2.new(0.5,-130,1,-68)}, TW.spring)
+	local offY = isMobile and -70 or -68
+	tw(toast, {Position = UDim2.new(0.5, isMobile and -145 or -130, 1, offY)}, TW.spring)
 	task.delay(2.8, function()
-		tw(toast, {Position = UDim2.new(0.5,-130,1,70)}, TW.smooth)
+		tw(toast, {Position = UDim2.new(0.5, isMobile and -145 or -130, 1, 80)}, TW.smooth)
 	end)
 end
 
@@ -438,107 +475,107 @@ local function teleport(target)
 end
 
 -- ══════════════════════════════════════
---  CARTE JOUEUR
+--  CARTE JOUEUR (avec chat en avatar)
 -- ══════════════════════════════════════
 local function makeCard(player, order)
 	local card = newFrame(scroll, {
-		Name = player.Name,
-		Size = UDim2.new(1,0,0,58),
+		Name        = player.Name,
+		Size        = UDim2.new(1, 0, 0, CARD_H),
 		BackgroundColor3 = C.glass,
 		LayoutOrder = order or 0,
-		ZIndex = 13,
+		ZIndex      = 13,
 	})
-	corner(card, 12)
+	corner(card, 13)
 	local cardStroke = stroke(card, C.border, 1)
 
-	-- Avatar cercle avec initiale
+	-- Avatar : image du chat
 	local avatarBg = newFrame(card, {
-		Size = UDim2.new(0,38,0,38),
-		Position = UDim2.new(0,10,0.5,-19),
+		Size     = UDim2.new(0, AVATAR_SIZE, 0, AVATAR_SIZE),
+		Position = UDim2.new(0, 10, 0.5, -AVATAR_SIZE/2),
 		BackgroundColor3 = C.cyanGhost,
-		ZIndex = 14,
+		ZIndex   = 14,
 	})
-	corner(avatarBg, 19)
+	corner(avatarBg, AVATAR_SIZE/2)
 	stroke(avatarBg, C.cyanDim, 1.5)
 
-	newLabel(avatarBg, {
-		Size = UDim2.new(1,0,1,0),
-		Text = string.upper(string.sub(player.Name, 1, 1)),
-		TextSize = 17,
-		Font = Enum.Font.GothamBold,
-		TextColor3 = C.cyan,
-		ZIndex = 15,
+	-- Image du chat dans le cercle
+	local catImg = newImage(avatarBg, {
+		Size     = UDim2.new(1, 0, 1, 0),
+		Image    = CAT_ID,
+		ScaleType = Enum.ScaleType.Crop,
+		ZIndex   = 15,
 	})
+	corner(catImg, AVATAR_SIZE/2)
 
-	-- Pastille verte "online"
+	-- Pastille online
 	local dot = newFrame(avatarBg, {
-		Size = UDim2.new(0,10,0,10),
-		Position = UDim2.new(1,-10,1,-10),
+		Size     = UDim2.new(0, isMobile and 12 or 10, 0, isMobile and 12 or 10),
+		Position = UDim2.new(1, isMobile and -12 or -10, 1, isMobile and -12 or -10),
 		BackgroundColor3 = C.green,
-		ZIndex = 16,
+		ZIndex   = 16,
 	})
-	corner(dot, 5)
+	corner(dot, isMobile and 6 or 5)
 	stroke(dot, C.void, 1.5)
 
-	-- Nom
+	-- Nom joueur
 	newLabel(card, {
-		Size = UDim2.new(1,-110,0,22),
-		Position = UDim2.new(0,56,0,8),
-		Text = player.Name,
-		TextSize = 13,
-		Font = Enum.Font.GothamBold,
+		Size     = UDim2.new(1, -(AVATAR_SIZE + BTN_W + 28), 0, isMobile and 24 or 22),
+		Position = UDim2.new(0, AVATAR_SIZE + 18, 0, isMobile and 10 or 8),
+		Text     = player.Name,
+		TextSize = BODY_SIZE,
+		Font     = Enum.Font.GothamBold,
 		TextColor3 = C.white,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextTruncate = Enum.TextTruncate.AtEnd,
-		ZIndex = 14,
+		ZIndex   = 14,
 	})
 
-	-- Tag "JOUEUR"
+	-- Badge LIVE
 	local tag = newFrame(card, {
-		Size = UDim2.new(0,50,0,16),
-		Position = UDim2.new(0,56,0,32),
+		Size     = UDim2.new(0, isMobile and 58 or 50, 0, isMobile and 18 or 16),
+		Position = UDim2.new(0, AVATAR_SIZE + 18, 0, isMobile and 36 or 32),
 		BackgroundColor3 = C.greenDark,
-		ZIndex = 14,
+		ZIndex   = 14,
 	})
-	corner(tag, 5)
+	corner(tag, 6)
 	newLabel(tag, {
-		Size = UDim2.new(1,0,1,0),
-		Text = "● LIVE",
-		TextSize = 9,
-		Font = Enum.Font.GothamBold,
+		Size     = UDim2.new(1, 0, 1, 0),
+		Text     = "● LIVE",
+		TextSize = isMobile and 10 or 9,
+		Font     = Enum.Font.GothamBold,
 		TextColor3 = C.green,
-		ZIndex = 15,
+		ZIndex   = 15,
 	})
 
 	-- Bouton TP
 	local tpBtn = Instance.new("TextButton")
-	tpBtn.Size = UDim2.new(0,52,0,32)
-	tpBtn.Position = UDim2.new(1,-62,0.5,-16)
+	tpBtn.Size     = UDim2.new(0, BTN_W, 0, BTN_H)
+	tpBtn.Position = UDim2.new(1, -(BTN_W + 10), 0.5, -BTN_H/2)
 	tpBtn.BackgroundColor3 = C.cyanGhost
-	tpBtn.Text = "TP ⚡"
-	tpBtn.TextSize = 11
-	tpBtn.Font = Enum.Font.GothamBold
+	tpBtn.Text     = "TP ⚡"
+	tpBtn.TextSize = isMobile and 13 or 11
+	tpBtn.Font     = Enum.Font.GothamBold
 	tpBtn.TextColor3 = C.cyan
 	tpBtn.AutoButtonColor = false
-	tpBtn.ZIndex = 14
-	tpBtn.Parent = card
-	corner(tpBtn, 9)
+	tpBtn.ZIndex   = 14
+	tpBtn.Parent   = card
+	corner(tpBtn, 10)
 	local tpStroke = stroke(tpBtn, C.cyanDim, 1)
 
-	-- Hover card
 	local function onEnter()
-		tw(card, {BackgroundColor3 = C.glassHov})
+		tw(card,     {BackgroundColor3 = C.glassHov})
 		tw(cardStroke, {Color = C.borderHot})
-		tw(tpBtn, {BackgroundColor3 = C.cyan, TextColor3 = C.void})
+		tw(tpBtn,    {BackgroundColor3 = C.cyan, TextColor3 = C.void})
 		tw(tpStroke, {Color = C.cyan})
 	end
 	local function onLeave()
-		tw(card, {BackgroundColor3 = C.glass})
+		tw(card,     {BackgroundColor3 = C.glass})
 		tw(cardStroke, {Color = C.border})
-		tw(tpBtn, {BackgroundColor3 = C.cyanGhost, TextColor3 = C.cyan})
+		tw(tpBtn,    {BackgroundColor3 = C.cyanGhost, TextColor3 = C.cyan})
 		tw(tpStroke, {Color = C.cyanDim})
 	end
 
+	-- Hover PC
 	tpBtn.MouseEnter:Connect(onEnter)
 	tpBtn.MouseLeave:Connect(onLeave)
 	card.InputBegan:Connect(function(i)
@@ -548,10 +585,10 @@ local function makeCard(player, order)
 		if i.UserInputType == Enum.UserInputType.MouseMovement then onLeave() end
 	end)
 
-	-- Click
+	-- Click / Tap
 	tpBtn.MouseButton1Click:Connect(function()
 		tw(tpBtn, {BackgroundColor3 = C.gold}, TW.snap)
-		task.delay(0.12, function() tw(tpBtn, {BackgroundColor3 = C.cyan}) end)
+		task.delay(0.15, function() tw(tpBtn, {BackgroundColor3 = C.cyan}) end)
 		teleport(player)
 		closeMenu()
 	end)
@@ -560,7 +597,7 @@ local function makeCard(player, order)
 end
 
 -- ══════════════════════════════════════
---  REFRESH LISTE
+--  REFRESH
 -- ══════════════════════════════════════
 local function refresh(filter)
 	filter = (filter or ""):lower()
@@ -577,14 +614,14 @@ local function refresh(filter)
 		end
 	end
 
-	table.sort(list, function(a,b) return a.Name < b.Name end)
+	table.sort(list, function(a, b) return a.Name < b.Name end)
+	emptyState.Visible = (#list == 0)
 
-	emptyState.Visible = #list == 0
 	for i, p in ipairs(list) do makeCard(p, i) end
 
 	local n = #list
-	countLabel.Text = n .. " JOUEUR" .. (n~=1 and "S" or "") .. " EN LIGNE"
-	scroll.CanvasSize = UDim2.new(0,0,0, listLayout.AbsoluteContentSize.Y + 8)
+	countLabel.Text = n .. " JOUEUR" .. (n ~= 1 and "S" or "") .. " EN LIGNE"
+	scroll.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 10)
 end
 
 searchBox:GetPropertyChangedSignal("Text"):Connect(function()
@@ -592,26 +629,26 @@ searchBox:GetPropertyChangedSignal("Text"):Connect(function()
 end)
 
 -- ══════════════════════════════════════
---  OUVERTURE / FERMETURE
+--  OPEN / CLOSE
 -- ══════════════════════════════════════
 local isOpen = false
 
 local function openMenu()
 	isOpen = true
-	Win.Size = UDim2.new(0,300,0,0)
+	Win.Size    = isMobile and UDim2.new(0.88, 0, 0, 0) or UDim2.new(0, 300, 0, 0)
 	Win.Visible = true
-	tw(Win, {Size = UDim2.new(0,300,0,460)}, TW.spring)
-	tw(fabIcon, {TextColor3 = C.void})
+	tw(Win, WIN_OPEN, TW.spring)
 	tw(fab, {BackgroundColor3 = C.white})
+	tw(fabIcon, {TextColor3 = C.cyan})
 	refresh()
 end
 
 function closeMenu()
 	isOpen = false
-	tw(Win, {Size = UDim2.new(0,300,0,0)}, TW.smooth)
+	tw(Win, isMobile and UDim2.new(0.88, 0, 0, 0) or UDim2.new(0, 300, 0, 0), TW.smooth)
 	tw(fab, {BackgroundColor3 = C.cyan})
 	tw(fabIcon, {TextColor3 = C.void})
-	task.delay(0.23, function()
+	task.delay(0.24, function()
 		if not isOpen then Win.Visible = false end
 	end)
 end
@@ -622,7 +659,7 @@ end)
 closeBtn.MouseButton1Click:Connect(closeMenu)
 
 -- ══════════════════════════════════════
---  DRAG & DROP (barre header)
+--  DRAG & DROP (header) — PC + Mobile
 -- ══════════════════════════════════════
 local dragging, dragStart, winStart = false, nil, nil
 
@@ -641,10 +678,9 @@ header.InputBegan:Connect(function(input)
 end)
 
 UserInputSvc.InputChanged:Connect(function(input)
-	if dragging and (
-		input.UserInputType == Enum.UserInputType.MouseMovement or
-		input.UserInputType == Enum.UserInputType.Touch
-	) then
+	if not dragging then return end
+	if input.UserInputType == Enum.UserInputType.MouseMovement
+		or input.UserInputType == Enum.UserInputType.Touch then
 		local d  = input.Position - dragStart
 		local sx = Gui.AbsoluteSize.X
 		local sy = Gui.AbsoluteSize.Y
