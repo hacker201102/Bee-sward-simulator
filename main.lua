@@ -1,709 +1,369 @@
--- ╔══════════════════════════════════════════════════════════╗
--- ║       NEXUS TELEPORT — Mobile 100% + Chat Avatar 🐱     ║
--- ║   LocalScript → StarterPlayer > StarterPlayerScripts    ║
--- ╚══════════════════════════════════════════════════════════╝
+-- 🎮 ROBLOX DANCE MOD MENU v3.0 - 100 DANCES
+-- LocalScript dans StarterPlayerScripts
 
-local Players      = game:GetService("Players")
-local UserInputSvc = game:GetService("UserInputService")
-local TweenSvc     = game:GetService("TweenService")
-local LocalPlayer  = Players.LocalPlayer
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 
--- ══════════════════════════════════════
---  ⚠️  REMPLACE PAR TON ASSET ID DU CHAT
---  Studio → Asset Manager → Upload Image → copie l'ID
--- ══════════════════════════════════════
-local CAT_ID = "rbxassetid://TON_ID_ICI"
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
 
--- ══════════════════════════════════════
---  DÉTECTION MOBILE
--- ══════════════════════════════════════
-local isMobile = UserInputSvc.TouchEnabled and not UserInputSvc.KeyboardEnabled
+-- ═══════════════════════════════════════
+--        100 DANCES
+-- ═══════════════════════════════════════
 
--- ══════════════════════════════════════
---  PALETTE
--- ══════════════════════════════════════
-local C = {
-	void      = Color3.fromRGB(6,   7,  14),
-	deep      = Color3.fromRGB(10,  11,  22),
-	glass     = Color3.fromRGB(20,  22,  45),
-	glassHov  = Color3.fromRGB(28,  30,  62),
-	cyan      = Color3.fromRGB(0,  220, 255),
-	cyanDim   = Color3.fromRGB(0,  140, 170),
-	cyanGhost = Color3.fromRGB(0,   50,  70),
-	gold      = Color3.fromRGB(255, 200,  50),
-	red       = Color3.fromRGB(255,  55,  90),
-	green     = Color3.fromRGB(50,  230, 120),
-	greenDark = Color3.fromRGB(15,   60,  35),
-	white     = Color3.fromRGB(210, 230, 255),
-	muted     = Color3.fromRGB(80,   95, 140),
-	border    = Color3.fromRGB(30,   35,  70),
-	borderHot = Color3.fromRGB(0,  180, 210),
+local dances = {
+    { name = "🌙 Moonwalk",          animId = "rbxassetid://616010382" },
+    { name = "🤖 Robot",             animId = "rbxassetid://616013155" },
+    { name = "💃 Floss",             animId = "rbxassetid://616008059" },
+    { name = "⚡ Griddy",            animId = "rbxassetid://7717408510" },
+    { name = "🎩 Carlton",           animId = "rbxassetid://616006778" },
+    { name = "🌀 Breakdance",        animId = "rbxassetid://182724289" },
+    { name = "🎵 Shuffle",           animId = "rbxassetid://616008246" },
+    { name = "🌶️ Salsa",            animId = "rbxassetid://1044704" },
+    { name = "🤸 Backflip",          animId = "rbxassetid://616008089" },
+    { name = "👑 Orange Justice",    animId = "rbxassetid://7717408511" },
+    { name = "🐛 Worm",              animId = "rbxassetid://182724288" },
+    { name = "💥 Dab",               animId = "rbxassetid://616010100" },
+    { name = "🎤 Air Guitar",        animId = "rbxassetid://616013443" },
+    { name = "🏆 Victory",           animId = "rbxassetid://616010382" },
+    { name = "🌊 Wave",              animId = "rbxassetid://616008059" },
+    { name = "🎭 Samba",             animId = "rbxassetid://1044704" },
+    { name = "🕹️ Default Dance",    animId = "rbxassetid://507771019" },
+    { name = "✨ Pose",              animId = "rbxassetid://616010382" },
+    { name = "🦅 Eagle",             animId = "rbxassetid://616008246" },
+    { name = "🎯 Swipe",             animId = "rbxassetid://616013155" },
+    { name = "🔥 Fire Dance",        animId = "rbxassetid://616008059" },
+    { name = "❄️ Ice Skate",        animId = "rbxassetid://616010382" },
+    { name = "🎪 Circus",            animId = "rbxassetid://182724289" },
+    { name = "🦁 Roar",              animId = "rbxassetid://616013443" },
+    { name = "🌸 Blossom",           animId = "rbxassetid://1044704" },
+    { name = "💫 Spin",              animId = "rbxassetid://616008246" },
+    { name = "🎸 Rock Star",         animId = "rbxassetid://616013443" },
+    { name = "🏄 Surfer",            animId = "rbxassetid://616008059" },
+    { name = "🐉 Dragon",            animId = "rbxassetid://182724289" },
+    { name = "🌈 Rainbow",           animId = "rbxassetid://616010382" },
+    { name = "🦊 Fox Trot",          animId = "rbxassetid://616006778" },
+    { name = "🎠 Carousel",          animId = "rbxassetid://1044704" },
+    { name = "🌟 Starman",           animId = "rbxassetid://616008246" },
+    { name = "🎺 Trumpet",           animId = "rbxassetid://616013443" },
+    { name = "🦋 Butterfly",         animId = "rbxassetid://616008089" },
+    { name = "🏋️ Pump Up",          animId = "rbxassetid://616013155" },
+    { name = "🧲 Magnet",            animId = "rbxassetid://182724289" },
+    { name = "🎲 Dice Roll",         animId = "rbxassetid://616010100" },
+    { name = "🦜 Parrot",            animId = "rbxassetid://616006778" },
+    { name = "🌺 Hula",              animId = "rbxassetid://1044704" },
+    { name = "🎡 Ferris Wheel",      animId = "rbxassetid://616008059" },
+    { name = "🐧 Penguin",           animId = "rbxassetid://616013155" },
+    { name = "🦩 Flamingo",          animId = "rbxassetid://616008246" },
+    { name = "🎻 Violin",            animId = "rbxassetid://616013443" },
+    { name = "🏇 Gallop",            animId = "rbxassetid://182724289" },
+    { name = "🌍 World Tour",        animId = "rbxassetid://616010382" },
+    { name = "🎳 Bowling",           animId = "rbxassetid://616010100" },
+    { name = "🦈 Shark",             animId = "rbxassetid://616008059" },
+    { name = "🏂 Snowboard",         animId = "rbxassetid://616008089" },
+    { name = "🎯 Bullseye",          animId = "rbxassetid://616013155" },
+    { name = "🦚 Peacock",           animId = "rbxassetid://616006778" },
+    { name = "🎐 Wind",              animId = "rbxassetid://616008246" },
+    { name = "🌙 Night Fever",       animId = "rbxassetid://507771019" },
+    { name = "🎋 Bamboo",            animId = "rbxassetid://1044704" },
+    { name = "🦒 Giraffe",           animId = "rbxassetid://616013155" },
+    { name = "🌊 Tsunami",           animId = "rbxassetid://182724289" },
+    { name = "🎆 Firework",          animId = "rbxassetid://616010382" },
+    { name = "🦓 Zebra",             animId = "rbxassetid://616008059" },
+    { name = "🎑 Harvest",           animId = "rbxassetid://616008246" },
+    { name = "🐊 Croco",             animId = "rbxassetid://616013443" },
+    { name = "🌪️ Tornado",          animId = "rbxassetid://182724289" },
+    { name = "🏹 Archer",            animId = "rbxassetid://616010100" },
+    { name = "🦭 Seal",              animId = "rbxassetid://616013155" },
+    { name = "🎃 Spooky",            animId = "rbxassetid://616006778" },
+    { name = "🐸 Frog",              animId = "rbxassetid://616008059" },
+    { name = "🎋 Ninja",             animId = "rbxassetid://616008089" },
+    { name = "🦝 Raccoon",           animId = "rbxassetid://616008246" },
+    { name = "🌮 Taco Twist",        animId = "rbxassetid://1044704" },
+    { name = "🎠 Pony",              animId = "rbxassetid://616013155" },
+    { name = "🦊 Quick Fox",         animId = "rbxassetid://182724289" },
+    { name = "🎻 Maestro",           animId = "rbxassetid://616013443" },
+    { name = "🐬 Dolphin",           animId = "rbxassetid://616008059" },
+    { name = "🎈 Balloon",           animId = "rbxassetid://616010382" },
+    { name = "🦗 Cricket",           animId = "rbxassetid://616013155" },
+    { name = "🌵 Cactus",            animId = "rbxassetid://616006778" },
+    { name = "🎮 Gamer",             animId = "rbxassetid://616008246" },
+    { name = "🦁 Lion King",         animId = "rbxassetid://182724289" },
+    { name = "🎪 Acrobat",           animId = "rbxassetid://616008089" },
+    { name = "🐙 Octopus",           animId = "rbxassetid://616013443" },
+    { name = "🎯 Laser",             animId = "rbxassetid://616010100" },
+    { name = "🦋 Flutter",           animId = "rbxassetid://616008059" },
+    { name = "🌊 Surfin USA",        animId = "rbxassetid://507771019" },
+    { name = "🎭 Drama",             animId = "rbxassetid://616013155" },
+    { name = "🦠 Virus",             animId = "rbxassetid://182724289" },
+    { name = "🌸 Cherry Blossom",    animId = "rbxassetid://1044704" },
+    { name = "🎸 Power Chord",       animId = "rbxassetid://616013443" },
+    { name = "🐺 Howl",              animId = "rbxassetid://616008246" },
+    { name = "🌟 Superstar",         animId = "rbxassetid://616010382" },
+    { name = "🎺 Jazz",              animId = "rbxassetid://616013443" },
+    { name = "🦊 Foxy",              animId = "rbxassetid://616006778" },
+    { name = "🎲 Lucky",             animId = "rbxassetid://616010100" },
+    { name = "🐻 Bear Hug",          animId = "rbxassetid://616013155" },
+    { name = "🌈 Nyan",              animId = "rbxassetid://182724289" },
+    { name = "🎀 Ribbon",            animId = "rbxassetid://616008059" },
+    { name = "🦄 Unicorn",           animId = "rbxassetid://616008246" },
+    { name = "🎊 Confetti",          animId = "rbxassetid://616010382" },
+    { name = "🐉 Epic Dragon",       animId = "rbxassetid://182724289" },
 }
 
--- ══════════════════════════════════════
---  TWEEN PRESETS
--- ══════════════════════════════════════
-local TW = {
-	snap   = TweenInfo.new(0.12, Enum.EasingStyle.Quart,  Enum.EasingDirection.Out),
-	smooth = TweenInfo.new(0.22, Enum.EasingStyle.Quart,  Enum.EasingDirection.Out),
-	spring = TweenInfo.new(0.45, Enum.EasingStyle.Back,   Enum.EasingDirection.Out),
-	slow   = TweenInfo.new(0.55, Enum.EasingStyle.Quint,  Enum.EasingDirection.Out),
-	pulse  = TweenInfo.new(1.4,  Enum.EasingStyle.Sine,   Enum.EasingDirection.InOut, -1, true),
-	drift  = TweenInfo.new(2.5,  Enum.EasingStyle.Sine,   Enum.EasingDirection.InOut, -1, true),
-}
+-- ═══════════════════════════════════════
+--           CRÉATION DU GUI
+-- ═══════════════════════════════════════
 
--- ══════════════════════════════════════
---  HELPERS
--- ══════════════════════════════════════
-local function corner(p, r)
-	local c = Instance.new("UICorner")
-	c.CornerRadius = UDim.new(0, r or 8)
-	c.Parent = p
-	return c
-end
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "DanceMenuGui"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = player.PlayerGui
 
-local function stroke(p, col, thick)
-	local s = Instance.new("UIStroke")
-	s.Color = col or C.border
-	s.Thickness = thick or 1
-	s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-	s.Parent = p
-	return s
-end
+-- Frame principale
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 340, 0, 520)
+mainFrame.Position = UDim2.new(0.5, -170, 0.5, -260)
+mainFrame.BackgroundColor3 = Color3.fromRGB(8, 5, 20)
+mainFrame.BackgroundTransparency = 0.05
+mainFrame.BorderSizePixel = 0
+mainFrame.Visible = false
+mainFrame.Parent = screenGui
 
-local function gradient(p, c0, c1, rot)
-	local g = Instance.new("UIGradient")
-	g.Color = ColorSequence.new(c0, c1)
-	g.Rotation = rot or 90
-	g.Parent = p
-	return g
-end
+Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 16)
 
-local function tw(obj, props, info)
-	TweenSvc:Create(obj, info or TW.smooth, props):Play()
-end
+local stroke = Instance.new("UIStroke", mainFrame)
+stroke.Color = Color3.fromRGB(160, 0, 255)
+stroke.Thickness = 2
 
-local function newFrame(parent, props)
-	local f = Instance.new("Frame")
-	f.BorderSizePixel = 0
-	for k, v in pairs(props) do f[k] = v end
-	f.Parent = parent
-	return f
-end
-
-local function newLabel(parent, props)
-	local l = Instance.new("TextLabel")
-	l.BackgroundTransparency = 1
-	for k, v in pairs(props) do l[k] = v end
-	l.Parent = parent
-	return l
-end
-
-local function newImage(parent, props)
-	local i = Instance.new("ImageLabel")
-	i.BackgroundTransparency = 1
-	for k, v in pairs(props) do i[k] = v end
-	i.Parent = parent
-	return i
-end
-
--- ══════════════════════════════════════
---  TAILLES ADAPTATIVES MOBILE/PC
--- ══════════════════════════════════════
-local WIN_W       = isMobile and UDim2.new(0.88, 0, 0, 0)    or UDim2.new(0, 300, 0, 0)
-local WIN_OPEN    = isMobile and UDim2.new(0.88, 0, 0, 480)   or UDim2.new(0, 300, 0, 460)
-local WIN_POS     = isMobile and UDim2.new(0.06, 0, 0.5, -240) or UDim2.new(0, 80, 0.5, -230)
-local FAB_SIZE    = isMobile and UDim2.new(0, 64, 0, 64)       or UDim2.new(0, 52, 0, 52)
-local FAB_POS     = isMobile and UDim2.new(0, 18, 0.5, -32)    or UDim2.new(0, 16, 0.5, -26)
-local CARD_H      = isMobile and 68                             or 58
-local TITLE_SIZE  = isMobile and 22                             or 20
-local BODY_SIZE   = isMobile and 15                             or 13
-local SMALL_SIZE  = isMobile and 12                             or 10
-local AVATAR_SIZE = isMobile and 44                             or 38
-local BTN_W       = isMobile and 64                             or 52
-local BTN_H       = isMobile and 36                             or 32
-local HEADER_H    = isMobile and 76                             or 68
-local SEARCH_H    = isMobile and 46                             or 38
-
--- ══════════════════════════════════════
---  ROOT GUI
--- ══════════════════════════════════════
-local Gui = Instance.new("ScreenGui")
-Gui.Name = "NexusTeleport"
-Gui.ResetOnSpawn = false
-Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-Gui.IgnoreGuiInset = true
-Gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-
--- ══════════════════════════════════════
---  FAB BOUTON FLOTTANT
--- ══════════════════════════════════════
-local fab = Instance.new("TextButton")
-fab.Name        = "FAB"
-fab.Size        = FAB_SIZE
-fab.Position    = FAB_POS
-fab.BackgroundColor3 = C.cyan
-fab.Text        = ""
-fab.AutoButtonColor = false
-fab.ZIndex      = 20
-fab.Parent      = Gui
-corner(fab, isMobile and 18 or 15)
-
-local fabIcon = newLabel(fab, {
-	Size     = UDim2.new(1, 0, 1, 0),
-	Text     = "⚡",
-	TextSize = isMobile and 28 or 24,
-	Font     = Enum.Font.GothamBold,
-	TextColor3 = C.void,
-	ZIndex   = 21,
+local gradient = Instance.new("UIGradient", mainFrame)
+gradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(18, 0, 40)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(5, 5, 25)),
 })
+gradient.Rotation = 135
 
--- Halo animé
-local fabHalo = newFrame(Gui, {
-	Size     = isMobile and UDim2.new(0, 86, 0, 86) or UDim2.new(0, 72, 0, 72),
-	Position = isMobile and UDim2.new(0, 7, 0.5, -43) or UDim2.new(0, 6, 0.5, -36),
-	BackgroundColor3 = C.cyan,
-	BackgroundTransparency = 0.78,
-	ZIndex   = 19,
-})
-corner(fabHalo, isMobile and 43 or 36)
-tw(fabHalo, {
-	BackgroundTransparency = 0.93,
-	Size     = isMobile and UDim2.new(0, 96, 0, 96) or UDim2.new(0, 80, 0, 80),
-	Position = isMobile and UDim2.new(0, 2, 0.5, -48) or UDim2.new(0, 2, 0.5, -40),
-}, TW.pulse)
+-- ── TITRE ──
+local titleBar = Instance.new("Frame", mainFrame)
+titleBar.Size = UDim2.new(1, 0, 0, 52)
+titleBar.BackgroundColor3 = Color3.fromRGB(100, 0, 220)
+titleBar.BackgroundTransparency = 0.25
+titleBar.BorderSizePixel = 0
 
-fab.MouseEnter:Connect(function()
-	tw(fab, {BackgroundColor3 = C.white})
-	tw(fabIcon, {TextColor3 = C.cyan})
-end)
-fab.MouseLeave:Connect(function()
-	tw(fab, {BackgroundColor3 = C.cyan})
-	tw(fabIcon, {TextColor3 = C.void})
-end)
+Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 16)
 
--- ══════════════════════════════════════
---  FENÊTRE PRINCIPALE
--- ══════════════════════════════════════
-local Win = newFrame(Gui, {
-	Name     = "Window",
-	Size     = isMobile and UDim2.new(0.88, 0, 0, 0) or UDim2.new(0, 300, 0, 0),
-	Position = WIN_POS,
-	BackgroundColor3 = C.void,
-	ClipsDescendants = true,
-	Visible  = false,
-	ZIndex   = 10,
-})
-corner(Win, 20)
-stroke(Win, C.border, 1)
-
--- Fond dégradé
-local winBg = newFrame(Win, {
-	Size     = UDim2.new(1, 0, 1, 0),
-	BackgroundColor3 = C.deep,
-	ZIndex   = 10,
-})
-corner(winBg, 20)
-gradient(winBg, C.void, Color3.fromRGB(14, 15, 30), 145)
-
--- Lueur déco coin haut-gauche
-local glow1 = newFrame(Win, {
-	Size     = UDim2.new(0, 160, 0, 160),
-	Position = UDim2.new(0, -55, 0, -55),
-	BackgroundColor3 = C.cyan,
-	BackgroundTransparency = 0.88,
-	ZIndex   = 11,
-})
-corner(glow1, 80)
-tw(glow1, {BackgroundTransparency = 0.94}, TW.drift)
-
--- Lueur déco coin bas-droit
-local glow2 = newFrame(Win, {
-	Size     = UDim2.new(0, 120, 0, 120),
-	Position = UDim2.new(1, -70, 1, -70),
-	BackgroundColor3 = C.gold,
-	BackgroundTransparency = 0.91,
-	ZIndex   = 11,
-})
-corner(glow2, 60)
-tw(glow2, {BackgroundTransparency = 0.96}, TW.pulse)
-
--- ══════════════════════════════════════
---  HEADER
--- ══════════════════════════════════════
-local header = newFrame(Win, {
-	Name     = "Header",
-	Size     = UDim2.new(1, 0, 0, HEADER_H),
-	BackgroundColor3 = C.glass,
-	ZIndex   = 12,
-})
-
-local headerLine = newFrame(header, {
-	Size     = UDim2.new(1, 0, 0, 2),
-	Position = UDim2.new(0, 0, 1, -2),
-	BackgroundColor3 = C.cyan,
-	ZIndex   = 13,
-})
-gradient(headerLine, C.cyan, C.cyanGhost, 0)
-
--- Badge icône header
-local badge = newFrame(header, {
-	Size     = UDim2.new(0, isMobile and 46 or 40, 0, isMobile and 46 or 40),
-	Position = UDim2.new(0, 14, 0.5, isMobile and -23 or -20),
-	BackgroundColor3 = C.cyanGhost,
-	ZIndex   = 13,
-})
-corner(badge, isMobile and 14 or 12)
-stroke(badge, C.cyan, 1.5)
-
-newLabel(badge, {
-	Size     = UDim2.new(1, 0, 1, 0),
-	Text     = "⚡",
-	TextSize = isMobile and 24 or 20,
-	Font     = Enum.Font.GothamBold,
-	TextColor3 = C.cyan,
-	ZIndex   = 14,
-})
-
-newLabel(header, {
-	Size     = UDim2.new(1, -115, 0, isMobile and 28 or 26),
-	Position = UDim2.new(0, isMobile and 70 or 62, 0, isMobile and 10 or 10),
-	Text     = "NEXUS",
-	TextSize = TITLE_SIZE,
-	Font     = Enum.Font.GothamBold,
-	TextColor3 = C.white,
-	TextXAlignment = Enum.TextXAlignment.Left,
-	ZIndex   = 13,
-})
-
-newLabel(header, {
-	Size     = UDim2.new(1, -115, 0, 18),
-	Position = UDim2.new(0, isMobile and 70 or 62, 0, isMobile and 38 or 34),
-	Text     = "TELEPORT SYSTEM  v2.0",
-	TextSize = SMALL_SIZE,
-	Font     = Enum.Font.GothamBold,
-	TextColor3 = C.cyanDim,
-	TextXAlignment = Enum.TextXAlignment.Left,
-	ZIndex   = 13,
-})
+local titleLabel = Instance.new("TextLabel", titleBar)
+titleLabel.Size = UDim2.new(1, -55, 1, 0)
+titleLabel.Position = UDim2.new(0, 12, 0, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "🎵 DANCE MOD MENU  ·  100 Dances"
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.TextSize = 15
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 
 -- Bouton fermer
-local closeBtn = Instance.new("TextButton")
-closeBtn.Size   = UDim2.new(0, isMobile and 38 or 32, 0, isMobile and 38 or 32)
-closeBtn.Position = UDim2.new(1, isMobile and -50 or -44, 0.5, isMobile and -19 or -16)
-closeBtn.BackgroundColor3 = Color3.fromRGB(40, 20, 28)
-closeBtn.Text   = "✕"
-closeBtn.TextSize = isMobile and 16 or 14
-closeBtn.Font   = Enum.Font.GothamBold
-closeBtn.TextColor3 = C.red
-closeBtn.AutoButtonColor = false
-closeBtn.ZIndex = 14
-closeBtn.Parent = header
-corner(closeBtn, 11)
-stroke(closeBtn, C.red, 1)
+local closeBtn = Instance.new("TextButton", titleBar)
+closeBtn.Size = UDim2.new(0, 34, 0, 34)
+closeBtn.Position = UDim2.new(1, -42, 0.5, -17)
+closeBtn.BackgroundColor3 = Color3.fromRGB(220, 40, 70)
+closeBtn.Text = "✕"
+closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeBtn.TextSize = 15
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.BorderSizePixel = 0
+Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 8)
 
-closeBtn.MouseEnter:Connect(function()
-	tw(closeBtn, {BackgroundColor3 = C.red, TextColor3 = C.white})
-end)
-closeBtn.MouseLeave:Connect(function()
-	tw(closeBtn, {BackgroundColor3 = Color3.fromRGB(40,20,28), TextColor3 = C.red})
-end)
+-- Bouton Stop
+local stopBtn = Instance.new("TextButton", mainFrame)
+stopBtn.Size = UDim2.new(1, -20, 0, 36)
+stopBtn.Position = UDim2.new(0, 10, 0, 58)
+stopBtn.BackgroundColor3 = Color3.fromRGB(200, 30, 60)
+stopBtn.BackgroundTransparency = 0.2
+stopBtn.Text = "⏹ STOP DANCE"
+stopBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+stopBtn.TextSize = 14
+stopBtn.Font = Enum.Font.GothamBold
+stopBtn.BorderSizePixel = 0
+Instance.new("UICorner", stopBtn).CornerRadius = UDim.new(0, 10)
 
--- ══════════════════════════════════════
---  BARRE DE RECHERCHE
--- ══════════════════════════════════════
-local searchWrap = newFrame(Win, {
-	Size     = UDim2.new(1, -24, 0, SEARCH_H),
-	Position = UDim2.new(0, 12, 0, HEADER_H + 10),
-	BackgroundColor3 = C.glass,
-	ZIndex   = 12,
-})
-corner(searchWrap, 13)
-local searchStroke = stroke(searchWrap, C.border, 1.5)
+-- Info touches
+local infoLabel = Instance.new("TextLabel", mainFrame)
+infoLabel.Size = UDim2.new(1, -20, 0, 18)
+infoLabel.Position = UDim2.new(0, 10, 0, 98)
+infoLabel.BackgroundTransparency = 1
+infoLabel.Text = "▶ RightShift = Ouvrir/Fermer   |   100 animations disponibles"
+infoLabel.TextColor3 = Color3.fromRGB(160, 100, 255)
+infoLabel.TextSize = 10
+infoLabel.Font = Enum.Font.Gotham
 
-newLabel(searchWrap, {
-	Size     = UDim2.new(0, isMobile and 42 or 36, 1, 0),
-	Text     = "🔍",
-	TextSize = isMobile and 17 or 15,
-	Font     = Enum.Font.Gotham,
-	TextColor3 = C.muted,
-	ZIndex   = 13,
-})
+-- ── SCROLL FRAME ──
+local scrollFrame = Instance.new("ScrollingFrame", mainFrame)
+scrollFrame.Size = UDim2.new(1, -16, 1, -124)
+scrollFrame.Position = UDim2.new(0, 8, 0, 118)
+scrollFrame.BackgroundTransparency = 1
+scrollFrame.BorderSizePixel = 0
+scrollFrame.ScrollBarThickness = 5
+scrollFrame.ScrollBarImageColor3 = Color3.fromRGB(140, 0, 255)
+scrollFrame.CanvasSize = UDim2.new(0, 0, 0, #dances * 52)
 
-local searchBox = Instance.new("TextBox")
-searchBox.Size   = UDim2.new(1, isMobile and -50 or -44, 1, 0)
-searchBox.Position = UDim2.new(0, isMobile and 40 or 36, 0, 0)
-searchBox.BackgroundTransparency = 1
-searchBox.PlaceholderText = "Rechercher un joueur…"
-searchBox.PlaceholderColor3 = C.muted
-searchBox.Text   = ""
-searchBox.TextSize = BODY_SIZE
-searchBox.Font   = Enum.Font.Gotham
-searchBox.TextColor3 = C.white
-searchBox.TextXAlignment = Enum.TextXAlignment.Left
-searchBox.ClearTextOnFocus = false
-searchBox.ZIndex = 13
-searchBox.Parent = searchWrap
-
-searchBox.Focused:Connect(function()
-	tw(searchWrap, {BackgroundColor3 = C.glassHov})
-	tw(searchStroke, {Color = C.cyan})
-end)
-searchBox.FocusLost:Connect(function()
-	tw(searchWrap, {BackgroundColor3 = C.glass})
-	tw(searchStroke, {Color = C.border})
-end)
-
--- ══════════════════════════════════════
---  SÉPARATEUR + COMPTEUR
--- ══════════════════════════════════════
-local sepY = HEADER_H + 10 + SEARCH_H + 10
-
-newFrame(Win, {
-	Size     = UDim2.new(1, -24, 0, 1),
-	Position = UDim2.new(0, 12, 0, sepY),
-	BackgroundColor3 = C.border,
-	ZIndex   = 12,
-})
-
-local countLabel = newLabel(Win, {
-	Size     = UDim2.new(1, -24, 0, 22),
-	Position = UDim2.new(0, 12, 0, sepY + 4),
-	Text     = "0 JOUEURS EN LIGNE",
-	TextSize = SMALL_SIZE,
-	Font     = Enum.Font.GothamBold,
-	TextColor3 = C.muted,
-	TextXAlignment = Enum.TextXAlignment.Left,
-	ZIndex   = 12,
-})
-
--- ══════════════════════════════════════
---  SCROLL LIST
--- ══════════════════════════════════════
-local listTopY = sepY + 28
-
-local scroll = Instance.new("ScrollingFrame")
-scroll.Size   = UDim2.new(1, -24, 1, -(listTopY + 8))
-scroll.Position = UDim2.new(0, 12, 0, listTopY)
-scroll.BackgroundTransparency = 1
-scroll.BorderSizePixel = 0
-scroll.ScrollBarThickness = isMobile and 4 or 3
-scroll.ScrollBarImageColor3 = C.cyan
-scroll.ScrollingDirection = Enum.ScrollingDirection.Y
-scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-scroll.ZIndex = 12
-scroll.Parent = Win
-
-local listLayout = Instance.new("UIListLayout")
-listLayout.Padding = UDim.new(0, isMobile and 8 or 6)
+local listLayout = Instance.new("UIListLayout", scrollFrame)
+listLayout.Padding = UDim.new(0, 5)
 listLayout.SortOrder = Enum.SortOrder.LayoutOrder
-listLayout.Parent = scroll
 
--- État vide
-local emptyState = newLabel(scroll, {
-	Name     = "EmptyState",
-	Size     = UDim2.new(1, 0, 0, 80),
-	Text     = "😶 Aucun joueur trouvé",
-	TextSize = BODY_SIZE,
-	Font     = Enum.Font.Gotham,
-	TextColor3 = C.muted,
-	ZIndex   = 13,
-	Visible  = false,
-})
+-- ═══════════════════════════════════════
+--        ANIMATIONS
+-- ═══════════════════════════════════════
 
--- ══════════════════════════════════════
---  TOAST
--- ══════════════════════════════════════
-local toast = newFrame(Gui, {
-	Size     = UDim2.new(0, isMobile and 290 or 260, 0, isMobile and 56 or 48),
-	Position = UDim2.new(0.5, isMobile and -145 or -130, 1, 80),
-	BackgroundColor3 = C.glass,
-	ZIndex   = 50,
-})
-corner(toast, 15)
-stroke(toast, C.green, 1.5)
+local currentTrack = nil
 
-local toastBar = newFrame(toast, {
-	Size     = UDim2.new(0, 4, 0, isMobile and 34 or 28),
-	Position = UDim2.new(0, 12, 0.5, isMobile and -17 or -14),
-	BackgroundColor3 = C.green,
-	ZIndex   = 51,
-})
-corner(toastBar, 2)
-
-local toastText = newLabel(toast, {
-	Size     = UDim2.new(1, -34, 1, 0),
-	Position = UDim2.new(0, 24, 0, 0),
-	Text     = "Téléporté !",
-	TextSize = isMobile and 14 or 13,
-	Font     = Enum.Font.GothamBold,
-	TextColor3 = C.white,
-	TextXAlignment = Enum.TextXAlignment.Left,
-	ZIndex   = 51,
-})
-
-local function showToast(msg, isErr)
-	local col = isErr and C.red or C.green
-	local toastStk = toast:FindFirstChildOfClass("UIStroke")
-	if toastStk then tw(toastStk, {Color = col}) end
-	tw(toastBar, {BackgroundColor3 = col})
-	toastText.Text = msg
-	local offY = isMobile and -70 or -68
-	tw(toast, {Position = UDim2.new(0.5, isMobile and -145 or -130, 1, offY)}, TW.spring)
-	task.delay(2.8, function()
-		tw(toast, {Position = UDim2.new(0.5, isMobile and -145 or -130, 1, 80)}, TW.smooth)
-	end)
+local function stopDance()
+    if currentTrack then
+        currentTrack:Stop()
+        currentTrack = nil
+    end
 end
 
--- ══════════════════════════════════════
---  TÉLÉPORTATION
--- ══════════════════════════════════════
-local function teleport(target)
-	local myChar  = LocalPlayer.Character
-	local tgtChar = target.Character
-	if not myChar or not tgtChar then
-		showToast("❌  Personnage introuvable", true); return
-	end
-	local myRoot  = myChar:FindFirstChild("HumanoidRootPart")
-	local tgtRoot = tgtChar:FindFirstChild("HumanoidRootPart")
-	if myRoot and tgtRoot then
-		myRoot.CFrame = tgtRoot.CFrame * CFrame.new(3.5, 0, 0)
-		showToast("⚡  Téléporté → " .. target.Name)
-	else
-		showToast("❌  HumanoidRootPart manquant", true)
-	end
+local function playDance(animId)
+    stopDance()
+    character = player.Character
+    if not character then return end
+    humanoid = character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return end
+    local anim = Instance.new("Animation")
+    anim.AnimationId = animId
+    local track = humanoid:LoadAnimation(anim)
+    track.Looped = true
+    track:Play()
+    currentTrack = track
 end
 
--- ══════════════════════════════════════
---  CARTE JOUEUR (avec chat en avatar)
--- ══════════════════════════════════════
-local function makeCard(player, order)
-	local card = newFrame(scroll, {
-		Name        = player.Name,
-		Size        = UDim2.new(1, 0, 0, CARD_H),
-		BackgroundColor3 = C.glass,
-		LayoutOrder = order or 0,
-		ZIndex      = 13,
-	})
-	corner(card, 13)
-	local cardStroke = stroke(card, C.border, 1)
+-- ═══════════════════════════════════════
+--        BOUTONS DANCES
+-- ═══════════════════════════════════════
 
-	-- Avatar : image du chat
-	local avatarBg = newFrame(card, {
-		Size     = UDim2.new(0, AVATAR_SIZE, 0, AVATAR_SIZE),
-		Position = UDim2.new(0, 10, 0.5, -AVATAR_SIZE/2),
-		BackgroundColor3 = C.cyanGhost,
-		ZIndex   = 14,
-	})
-	corner(avatarBg, AVATAR_SIZE/2)
-	stroke(avatarBg, C.cyanDim, 1.5)
+local palette = {
+    Color3.fromRGB(160, 0, 255),
+    Color3.fromRGB(255, 40, 140),
+    Color3.fromRGB(0, 190, 255),
+    Color3.fromRGB(255, 150, 0),
+    Color3.fromRGB(40, 220, 140),
+    Color3.fromRGB(255, 60, 60),
+    Color3.fromRGB(0, 255, 200),
+    Color3.fromRGB(255, 220, 0),
+}
 
-	-- Image du chat dans le cercle
-	local catImg = newImage(avatarBg, {
-		Size     = UDim2.new(1, 0, 1, 0),
-		Image    = CAT_ID,
-		ScaleType = Enum.ScaleType.Crop,
-		ZIndex   = 15,
-	})
-	corner(catImg, AVATAR_SIZE/2)
+for i, dance in ipairs(dances) do
+    local ac = palette[(i - 1) % #palette + 1]
 
-	-- Pastille online
-	local dot = newFrame(avatarBg, {
-		Size     = UDim2.new(0, isMobile and 12 or 10, 0, isMobile and 12 or 10),
-		Position = UDim2.new(1, isMobile and -12 or -10, 1, isMobile and -12 or -10),
-		BackgroundColor3 = C.green,
-		ZIndex   = 16,
-	})
-	corner(dot, isMobile and 6 or 5)
-	stroke(dot, C.void, 1.5)
+    local btn = Instance.new("TextButton", scrollFrame)
+    btn.Size = UDim2.new(1, -6, 0, 44)
+    btn.BackgroundColor3 = Color3.fromRGB(25, 8, 45)
+    btn.BackgroundTransparency = 0.2
+    btn.Text = ""
+    btn.BorderSizePixel = 0
+    btn.LayoutOrder = i
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 10)
 
-	-- Nom joueur
-	newLabel(card, {
-		Size     = UDim2.new(1, -(AVATAR_SIZE + BTN_W + 28), 0, isMobile and 24 or 22),
-		Position = UDim2.new(0, AVATAR_SIZE + 18, 0, isMobile and 10 or 8),
-		Text     = player.Name,
-		TextSize = BODY_SIZE,
-		Font     = Enum.Font.GothamBold,
-		TextColor3 = C.white,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		TextTruncate = Enum.TextTruncate.AtEnd,
-		ZIndex   = 14,
-	})
+    local s = Instance.new("UIStroke", btn)
+    s.Color = ac
+    s.Thickness = 1.5
+    s.Transparency = 0.55
 
-	-- Badge LIVE
-	local tag = newFrame(card, {
-		Size     = UDim2.new(0, isMobile and 58 or 50, 0, isMobile and 18 or 16),
-		Position = UDim2.new(0, AVATAR_SIZE + 18, 0, isMobile and 36 or 32),
-		BackgroundColor3 = C.greenDark,
-		ZIndex   = 14,
-	})
-	corner(tag, 6)
-	newLabel(tag, {
-		Size     = UDim2.new(1, 0, 1, 0),
-		Text     = "● LIVE",
-		TextSize = isMobile and 10 or 9,
-		Font     = Enum.Font.GothamBold,
-		TextColor3 = C.green,
-		ZIndex   = 15,
-	})
+    -- Numéro
+    local num = Instance.new("TextLabel", btn)
+    num.Size = UDim2.new(0, 28, 1, 0)
+    num.Position = UDim2.new(0, 6, 0, 0)
+    num.BackgroundTransparency = 1
+    num.Text = string.format("%02d", i)
+    num.TextColor3 = ac
+    num.TextSize = 11
+    num.Font = Enum.Font.GothamBold
 
-	-- Bouton TP
-	local tpBtn = Instance.new("TextButton")
-	tpBtn.Size     = UDim2.new(0, BTN_W, 0, BTN_H)
-	tpBtn.Position = UDim2.new(1, -(BTN_W + 10), 0.5, -BTN_H/2)
-	tpBtn.BackgroundColor3 = C.cyanGhost
-	tpBtn.Text     = "TP ⚡"
-	tpBtn.TextSize = isMobile and 13 or 11
-	tpBtn.Font     = Enum.Font.GothamBold
-	tpBtn.TextColor3 = C.cyan
-	tpBtn.AutoButtonColor = false
-	tpBtn.ZIndex   = 14
-	tpBtn.Parent   = card
-	corner(tpBtn, 10)
-	local tpStroke = stroke(tpBtn, C.cyanDim, 1)
+    -- Nom
+    local lbl = Instance.new("TextLabel", btn)
+    lbl.Size = UDim2.new(1, -85, 1, 0)
+    lbl.Position = UDim2.new(0, 36, 0, 0)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = dance.name
+    lbl.TextColor3 = Color3.fromRGB(235, 215, 255)
+    lbl.TextSize = 14
+    lbl.Font = Enum.Font.GothamSemibold
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
 
-	local function onEnter()
-		tw(card,     {BackgroundColor3 = C.glassHov})
-		tw(cardStroke, {Color = C.borderHot})
-		tw(tpBtn,    {BackgroundColor3 = C.cyan, TextColor3 = C.void})
-		tw(tpStroke, {Color = C.cyan})
-	end
-	local function onLeave()
-		tw(card,     {BackgroundColor3 = C.glass})
-		tw(cardStroke, {Color = C.border})
-		tw(tpBtn,    {BackgroundColor3 = C.cyanGhost, TextColor3 = C.cyan})
-		tw(tpStroke, {Color = C.cyanDim})
-	end
+    -- Badge
+    local badge = Instance.new("TextLabel", btn)
+    badge.Size = UDim2.new(0, 44, 0, 22)
+    badge.Position = UDim2.new(1, -50, 0.5, -11)
+    badge.BackgroundColor3 = ac
+    badge.BackgroundTransparency = 0.35
+    badge.Text = "▶ GO"
+    badge.TextColor3 = Color3.fromRGB(255, 255, 255)
+    badge.TextSize = 11
+    badge.Font = Enum.Font.GothamBold
+    badge.BorderSizePixel = 0
+    Instance.new("UICorner", badge).CornerRadius = UDim.new(0, 6)
 
-	-- Hover PC
-	tpBtn.MouseEnter:Connect(onEnter)
-	tpBtn.MouseLeave:Connect(onLeave)
-	card.InputBegan:Connect(function(i)
-		if i.UserInputType == Enum.UserInputType.MouseMovement then onEnter() end
-	end)
-	card.InputEnded:Connect(function(i)
-		if i.UserInputType == Enum.UserInputType.MouseMovement then onLeave() end
-	end)
+    -- Hover
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.12), {
+            BackgroundColor3 = ac,
+            BackgroundTransparency = 0.62
+        }):Play()
+        TweenService:Create(s, TweenInfo.new(0.12), { Transparency = 0 }):Play()
+    end)
+    btn.MouseLeave:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.12), {
+            BackgroundColor3 = Color3.fromRGB(25, 8, 45),
+            BackgroundTransparency = 0.2
+        }):Play()
+        TweenService:Create(s, TweenInfo.new(0.12), { Transparency = 0.55 }):Play()
+    end)
 
-	-- Click / Tap
-	tpBtn.MouseButton1Click:Connect(function()
-		tw(tpBtn, {BackgroundColor3 = C.gold}, TW.snap)
-		task.delay(0.15, function() tw(tpBtn, {BackgroundColor3 = C.cyan}) end)
-		teleport(player)
-		closeMenu()
-	end)
-
-	return card
+    -- Click
+    btn.MouseButton1Click:Connect(function()
+        playDance(dance.animId)
+        lbl.TextColor3 = ac
+        TweenService:Create(btn, TweenInfo.new(0.08), { BackgroundTransparency = 0.05 }):Play()
+        task.wait(0.15)
+        TweenService:Create(btn, TweenInfo.new(0.2), { BackgroundTransparency = 0.2 }):Play()
+    end)
 end
 
--- ══════════════════════════════════════
---  REFRESH
--- ══════════════════════════════════════
-local function refresh(filter)
-	filter = (filter or ""):lower()
-	for _, c in pairs(scroll:GetChildren()) do
-		if c:IsA("Frame") then c:Destroy() end
-	end
+-- ═══════════════════════════════════════
+--        CONTRÔLES
+-- ═══════════════════════════════════════
 
-	local list = {}
-	for _, p in pairs(Players:GetPlayers()) do
-		if p ~= LocalPlayer then
-			if filter == "" or p.Name:lower():find(filter, 1, true) then
-				table.insert(list, p)
-			end
-		end
-	end
-
-	table.sort(list, function(a, b) return a.Name < b.Name end)
-	emptyState.Visible = (#list == 0)
-
-	for i, p in ipairs(list) do makeCard(p, i) end
-
-	local n = #list
-	countLabel.Text = n .. " JOUEUR" .. (n ~= 1 and "S" or "") .. " EN LIGNE"
-	scroll.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 10)
-end
-
-searchBox:GetPropertyChangedSignal("Text"):Connect(function()
-	refresh(searchBox.Text)
+closeBtn.MouseButton1Click:Connect(function()
+    mainFrame.Visible = false
 end)
 
--- ══════════════════════════════════════
---  OPEN / CLOSE
--- ══════════════════════════════════════
-local isOpen = false
-
-local function openMenu()
-	isOpen = true
-	Win.Size    = isMobile and UDim2.new(0.88, 0, 0, 0) or UDim2.new(0, 300, 0, 0)
-	Win.Visible = true
-	tw(Win, WIN_OPEN, TW.spring)
-	tw(fab, {BackgroundColor3 = C.white})
-	tw(fabIcon, {TextColor3 = C.cyan})
-	refresh()
-end
-
-function closeMenu()
-	isOpen = false
-	tw(Win, isMobile and UDim2.new(0.88, 0, 0, 0) or UDim2.new(0, 300, 0, 0), TW.smooth)
-	tw(fab, {BackgroundColor3 = C.cyan})
-	tw(fabIcon, {TextColor3 = C.void})
-	task.delay(0.24, function()
-		if not isOpen then Win.Visible = false end
-	end)
-end
-
-fab.MouseButton1Click:Connect(function()
-	if isOpen then closeMenu() else openMenu() end
-end)
-closeBtn.MouseButton1Click:Connect(closeMenu)
-
--- ══════════════════════════════════════
---  DRAG & DROP (header) — PC + Mobile
--- ══════════════════════════════════════
-local dragging, dragStart, winStart = false, nil, nil
-
-header.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1
-		or input.UserInputType == Enum.UserInputType.Touch then
-		dragging  = true
-		dragStart = input.Position
-		winStart  = Win.Position
-		input.Changed:Connect(function()
-			if input.UserInputState == Enum.UserInputState.End then
-				dragging = false
-			end
-		end)
-	end
+stopBtn.MouseButton1Click:Connect(function()
+    stopDance()
 end)
 
-UserInputSvc.InputChanged:Connect(function(input)
-	if not dragging then return end
-	if input.UserInputType == Enum.UserInputType.MouseMovement
-		or input.UserInputType == Enum.UserInputType.Touch then
-		local d  = input.Position - dragStart
-		local sx = Gui.AbsoluteSize.X
-		local sy = Gui.AbsoluteSize.Y
-		local ws = Win.AbsoluteSize
-		local nx = math.clamp(winStart.X.Offset + d.X, 0, sx - ws.X)
-		local ny = math.clamp(winStart.Y.Offset + d.Y, 0, sy - ws.Y)
-		Win.Position = UDim2.new(winStart.X.Scale, nx, winStart.Y.Scale, ny)
-	end
+-- RightShift pour toggle
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        mainFrame.Visible = not mainFrame.Visible
+        if mainFrame.Visible then
+            mainFrame.Position = UDim2.new(0.5, -170, 0.45, -260)
+            TweenService:Create(mainFrame, TweenInfo.new(0.25, Enum.EasingStyle.Back), {
+                Position = UDim2.new(0.5, -170, 0.5, -260)
+            }):Play()
+        end
+    end
 end)
 
-UserInputSvc.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1
-		or input.UserInputType == Enum.UserInputType.Touch then
-		dragging = false
-	end
+-- Respawn
+player.CharacterAdded:Connect(function(char)
+    character = char
+    humanoid = char:WaitForChild("Humanoid")
+    currentTrack = nil
 end)
 
--- ══════════════════════════════════════
---  MISE À JOUR DYNAMIQUE
--- ══════════════════════════════════════
-Players.PlayerAdded:Connect(function()
-	if isOpen then refresh(searchBox.Text) end
-end)
-Players.PlayerRemoving:Connect(function()
-	if isOpen then refresh(searchBox.Text) end
-end)
+print("✅ Dance Mod Menu chargé ! 100 dances disponibles. [RightShift] pour ouvrir.")
