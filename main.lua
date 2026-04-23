@@ -1,651 +1,900 @@
---// Dance Hub Premium Mobile
---// LocalScript - StarterPlayerScripts
-
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
-local UIS = game:GetService("UserInputService")
+local UserInputService = game:GetService("UserInputService")
+local MarketplaceService = game:GetService("MarketplaceService")
+
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- éviter les doublons
-local old = playerGui:FindFirstChild("DanceHubPremium")
-if old then
-	old:Destroy()
+if playerGui:FindFirstChild("SeluwiaUI") then
+    playerGui.SeluwiaUI:Destroy()
 end
 
--- =========================
--- CONFIG
--- =========================
-local HUB_NAME = "DanceHubPremium"
-local MOBILE_OPEN_POS = UDim2.new(0, 18, 0.72, 0)
-local HUB_SIZE = UDim2.new(0, 320, 0, 430)
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "SeluwiaUI"
+screenGui.ResetOnSpawn = false
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screenGui.IgnoreGuiInset = true
+screenGui.Parent = playerGui
 
--- pack de vraies danses / emotes connues
--- note: pour monter à 200+, ajoute simplement d'autres entrées dans DANCES
-local DANCES = {
-	{ Name = "Dance 1", Icon = "💃", AnimationId = "rbxassetid://507771019", Favorite = true },
-	{ Name = "Dance 2", Icon = "🎵", AnimationId = "rbxassetid://507771955", Favorite = false },
-	{ Name = "Dance 3", Icon = "✨", AnimationId = "rbxassetid://507772104", Favorite = false },
+local isMobile = UserInputService.TouchEnabled
+local autoSpeed = 100  -- signals per second
 
-	-- Creator Store / exemples réels
-	{ Name = "Gangnam Style", Icon = "🕺", AnimationId = "rbxassetid://102001896", Favorite = true },
-	{ Name = "California Girls", Icon = "🌴", AnimationId = "rbxassetid://11165082872", Favorite = false },
-	{ Name = "Dancing Animation", Icon = "🎶", AnimationId = "rbxassetid://12485694016", Favorite = false },
-	{ Name = "R15 Dance 2 Store", Icon = "🔥", AnimationId = "rbxassetid://12192378501", Favorite = false },
-	{ Name = "R15 Dance 3 Store", Icon = "🌈", AnimationId = "rbxassetid://12192400053", Favorite = false },
-	{ Name = "DANCE ANIMATION R6", Icon = "⚡", AnimationId = "rbxassetid://8903870018", Favorite = false },
-	{ Name = "Magnetic Dance", Icon = "🪩", AnimationId = "rbxassetid://16855275316", Favorite = false },
-}
-
--- duplique pour obtenir 200+ slots modifiables
-local seedCount = #DANCES
-for i = seedCount + 1, 220 do
-	local src = DANCES[((i - 1) % seedCount) + 1]
-	table.insert(DANCES, {
-		Name = src.Name .. " #" .. i,
-		Icon = src.Icon,
-		AnimationId = src.AnimationId,
-		Favorite = false,
-	})
+-- Helper functions
+local function stroke(parent, color, thickness)
+    local s = Instance.new("UIStroke", parent)
+    s.Color = color or Color3.fromRGB(40, 40, 56)
+    s.Thickness = thickness or 1
+    return s
 end
 
--- =========================
--- HELPERS
--- =========================
-local function make(className, props, parent)
-	local obj = Instance.new(className)
-	for k, v in pairs(props or {}) do
-		obj[k] = v
-	end
-	if parent then
-		obj.Parent = parent
-	end
-	return obj
+local function corner(parent, radius)
+    local c = Instance.new("UICorner", parent)
+    c.CornerRadius = UDim.new(0, radius or 10)
+    return c
 end
 
-local function round(parent, radius)
-	return make("UICorner", { CornerRadius = UDim.new(0, radius or 12) }, parent)
+local function getTime()
+    return os.date("%H:%M:%S")
 end
 
-local function stroke(parent, color, thickness, transparency)
-	return make("UIStroke", {
-		Color = color or Color3.fromRGB(120, 170, 255),
-		Thickness = thickness or 1.4,
-		Transparency = transparency or 0
-	}, parent)
+-- Scale UI for mobile
+local panelSize
+local fontSizeScale = isMobile and 0.8 or 1
+local buttonHeight = isMobile and 36 or 28
+local titleBarHeight = isMobile and 44 or 52
+local footerHeight = isMobile and 44 or 50
+
+if isMobile then
+    panelSize = UDim2.new(0.9, 0, 0.7, 0)
+else
+    panelSize = UDim2.new(0, 760, 0, 520)
 end
 
-local function gradient(parent, c1, c2, rot)
-	return make("UIGradient", {
-		Color = ColorSequence.new({
-			ColorSequenceKeypoint.new(0, c1),
-			ColorSequenceKeypoint.new(1, c2)
-		}),
-		Rotation = rot or 0
-	}, parent)
+local panel = Instance.new("Frame")
+panel.Name = "Panel"
+panel.Size = panelSize
+panel.Position = UDim2.new(0.5, -panelSize.X.Offset/2, 0.5, -panelSize.Y.Offset/2)
+if isMobile then
+    panel.Position = UDim2.new(0.05, 0, 0.15, 0)
+end
+panel.BackgroundColor3 = Color3.fromRGB(10, 10, 12)
+panel.BorderSizePixel = 0
+panel.Parent = screenGui
+corner(panel, 16)
+stroke(panel, Color3.fromRGB(30, 30, 42), 1)
+
+-- Resize handle (PC only)
+if not isMobile then
+    local resizeHandle = Instance.new("Frame")
+    resizeHandle.Name = "ResizeHandle"
+    resizeHandle.Size = UDim2.new(0, 20, 0, 20)
+    resizeHandle.Position = UDim2.new(1, -20, 1, -20)
+    resizeHandle.AnchorPoint = Vector2.new(1, 1)
+    resizeHandle.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
+    resizeHandle.BorderSizePixel = 0
+    resizeHandle.Parent = panel
+    corner(resizeHandle, 4)
+    stroke(resizeHandle, Color3.fromRGB(80, 80, 110), 1)
+
+    local resizing = false
+    local resizeStartPos, startSize
+    resizeHandle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            resizing = true
+            resizeStartPos = input.Position
+            startSize = panel.AbsoluteSize
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if resizing and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position - resizeStartPos
+            local newWidth = math.clamp(startSize.X + delta.X, 400, 1200)
+            local newHeight = math.clamp(startSize.Y + delta.Y, 300, 800)
+            panel.Size = UDim2.new(0, newWidth, 0, newHeight)
+        end
+    end)
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            resizing = false
+        end
+    end)
 end
 
-local function getHumanoid()
-	local char = player.Character or player.CharacterAdded:Wait()
-	return char:FindFirstChildOfClass("Humanoid"), char
-end
-
-local function getAnimator()
-	local humanoid = getHumanoid()
-	if not humanoid then return nil end
-	local animator = humanoid:FindFirstChildOfClass("Animator")
-	if not animator then
-		animator = Instance.new("Animator")
-		animator.Parent = humanoid
-	end
-	return animator, humanoid
-end
-
-local function safeLower(s)
-	return string.lower(tostring(s or ""))
-end
-
--- =========================
--- GUI ROOT
--- =========================
-local gui = make("ScreenGui", {
-	Name = HUB_NAME,
-	ResetOnSpawn = false,
-	ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
-	IgnoreGuiInset = true
-}, playerGui)
-
--- bouton flottant
-local openButton = make("TextButton", {
-	Name = "OpenButton",
-	Size = UDim2.new(0, 64, 0, 64),
-	Position = MOBILE_OPEN_POS,
-	Text = "💃",
-	TextScaled = true,
-	Font = Enum.Font.GothamBold,
-	BackgroundColor3 = Color3.fromRGB(55, 70, 135),
-	TextColor3 = Color3.fromRGB(255,255,255),
-	AutoButtonColor = false,
-	ZIndex = 20
-}, gui)
-round(openButton, 18)
-stroke(openButton, Color3.fromRGB(160, 200, 255), 1.5, 0.15)
-gradient(openButton, Color3.fromRGB(82, 104, 200), Color3.fromRGB(163, 85, 255), 45)
-
-local openGlow = make("ImageLabel", {
-	BackgroundTransparency = 1,
-	Image = "rbxassetid://5028857084",
-	ImageTransparency = 0.25,
-	ScaleType = Enum.ScaleType.Slice,
-	SliceCenter = Rect.new(24,24,276,276),
-	Size = UDim2.new(1, 22, 1, 22),
-	Position = UDim2.new(0, -11, 0, -11),
-	ZIndex = 19
-}, openButton)
-
--- fenêtre
-local hub = make("Frame", {
-	Name = "Hub",
-	AnchorPoint = Vector2.new(0.5, 0.5),
-	Size = HUB_SIZE,
-	Position = UDim2.new(0.5, 0, 0.5, 0),
-	BackgroundColor3 = Color3.fromRGB(20, 22, 30),
-	Visible = false,
-	ZIndex = 10
-}, gui)
-round(hub, 18)
-stroke(hub, Color3.fromRGB(116, 152, 255), 1.8, 0.15)
-gradient(hub, Color3.fromRGB(28, 32, 48), Color3.fromRGB(18, 18, 27), 90)
-
-local hubGlow = make("ImageLabel", {
-	BackgroundTransparency = 1,
-	Image = "rbxassetid://5028857084",
-	ImageTransparency = 0.3,
-	ScaleType = Enum.ScaleType.Slice,
-	SliceCenter = Rect.new(24,24,276,276),
-	Size = UDim2.new(1, 30, 1, 30),
-	Position = UDim2.new(0, -15, 0, -15),
-	ZIndex = 9
-}, hub)
-
--- top bar
-local top = make("Frame", {
-	Size = UDim2.new(1, 0, 0, 52),
-	BackgroundColor3 = Color3.fromRGB(31, 37, 58),
-	BorderSizePixel = 0,
-	ZIndex = 11
-}, hub)
-round(top, 18)
-gradient(top, Color3.fromRGB(58, 77, 160), Color3.fromRGB(130, 74, 210), 0)
-
-local topMask = make("Frame", {
-	AnchorPoint = Vector2.new(0, 1),
-	Position = UDim2.new(0, 0, 1, 0),
-	Size = UDim2.new(1, 0, 0, 18),
-	BackgroundColor3 = Color3.fromRGB(31, 37, 58),
-	BorderSizePixel = 0,
-	ZIndex = 11
-}, top)
-
-local title = make("TextLabel", {
-	BackgroundTransparency = 1,
-	Position = UDim2.new(0, 14, 0, 0),
-	Size = UDim2.new(1, -120, 1, 0),
-	Text = "🌈 Dance Hub Premium",
-	TextXAlignment = Enum.TextXAlignment.Left,
-	TextColor3 = Color3.fromRGB(255,255,255),
-	Font = Enum.Font.GothamBold,
-	TextSize = 20,
-	ZIndex = 12
-}, top)
-
-local subtitle = make("TextLabel", {
-	BackgroundTransparency = 1,
-	Position = UDim2.new(0, 14, 0, 28),
-	Size = UDim2.new(1, -120, 0, 16),
-	Text = "200+ slots • mobile fluide • favoris",
-	TextXAlignment = Enum.TextXAlignment.Left,
-	TextColor3 = Color3.fromRGB(220,225,255),
-	Font = Enum.Font.Gotham,
-	TextSize = 11,
-	ZIndex = 12
-}, top)
-
-local closeBtn = make("TextButton", {
-	AnchorPoint = Vector2.new(1, 0.5),
-	Position = UDim2.new(1, -10, 0.5, 0),
-	Size = UDim2.new(0, 34, 0, 34),
-	Text = "✕",
-	Font = Enum.Font.GothamBold,
-	TextSize = 16,
-	TextColor3 = Color3.fromRGB(255,255,255),
-	BackgroundColor3 = Color3.fromRGB(208, 73, 73),
-	AutoButtonColor = false,
-	ZIndex = 12
-}, top)
-round(closeBtn, 12)
-
--- recherche
-local searchBox = make("TextBox", {
-	Position = UDim2.new(0, 12, 0, 64),
-	Size = UDim2.new(1, -24, 0, 38),
-	PlaceholderText = "🔎 Chercher une dance...",
-	Text = "",
-	ClearTextOnFocus = false,
-	Font = Enum.Font.Gotham,
-	TextSize = 15,
-	TextColor3 = Color3.fromRGB(255,255,255),
-	PlaceholderColor3 = Color3.fromRGB(180,190,220),
-	BackgroundColor3 = Color3.fromRGB(32, 36, 50),
-	ZIndex = 11
-}, hub)
-round(searchBox, 12)
-stroke(searchBox, Color3.fromRGB(90, 110, 190), 1.2, 0.35)
-
--- boutons du haut
-local buttonsRow = make("Frame", {
-	Position = UDim2.new(0, 12, 0, 110),
-	Size = UDim2.new(1, -24, 0, 40),
-	BackgroundTransparency = 1,
-	ZIndex = 11
-}, hub)
-
-local favFilterBtn = make("TextButton", {
-	Size = UDim2.new(0.33, -4, 1, 0),
-	Text = "⭐ Favoris",
-	Font = Enum.Font.GothamBold,
-	TextSize = 14,
-	TextColor3 = Color3.fromRGB(255,255,255),
-	BackgroundColor3 = Color3.fromRGB(61, 69, 108),
-	AutoButtonColor = false,
-	ZIndex = 12
-}, buttonsRow)
-round(favFilterBtn, 12)
-
-local allBtn = make("TextButton", {
-	Position = UDim2.new(0.33, 2, 0, 0),
-	Size = UDim2.new(0.33, -4, 1, 0),
-	Text = "📂 Toutes",
-	Font = Enum.Font.GothamBold,
-	TextSize = 14,
-	TextColor3 = Color3.fromRGB(255,255,255),
-	BackgroundColor3 = Color3.fromRGB(49, 57, 90),
-	AutoButtonColor = false,
-	ZIndex = 12
-}, buttonsRow)
-round(allBtn, 12)
-
-local stopBtn = make("TextButton", {
-	AnchorPoint = Vector2.new(1,0),
-	Position = UDim2.new(1, 0, 0, 0),
-	Size = UDim2.new(0.34, -2, 1, 0),
-	Text = "🛑 Stop",
-	Font = Enum.Font.GothamBold,
-	TextSize = 14,
-	TextColor3 = Color3.fromRGB(255,255,255),
-	BackgroundColor3 = Color3.fromRGB(155, 58, 58),
-	AutoButtonColor = false,
-	ZIndex = 12
-}, buttonsRow)
-round(stopBtn, 12)
-
--- compteur
-local counterLabel = make("TextLabel", {
-	BackgroundTransparency = 1,
-	Position = UDim2.new(0, 14, 0, 154),
-	Size = UDim2.new(1, -28, 0, 16),
-	Text = "0 résultat",
-	TextXAlignment = Enum.TextXAlignment.Left,
-	TextColor3 = Color3.fromRGB(190,200,235),
-	Font = Enum.Font.Gotham,
-	TextSize = 12,
-	ZIndex = 11
-}, hub)
-
--- scrolling list
-local listHolder = make("Frame", {
-	Position = UDim2.new(0, 12, 0, 176),
-	Size = UDim2.new(1, -24, 1, -188),
-	BackgroundColor3 = Color3.fromRGB(25, 28, 39),
-	ZIndex = 11
-}, hub)
-round(listHolder, 14)
-stroke(listHolder, Color3.fromRGB(70,85,140), 1.1, 0.45)
-
-local scroll = make("ScrollingFrame", {
-	Size = UDim2.new(1, 0, 1, 0),
-	CanvasSize = UDim2.new(0, 0, 0, 0),
-	ScrollBarThickness = 4,
-	BackgroundTransparency = 1,
-	BorderSizePixel = 0,
-	AutomaticCanvasSize = Enum.AutomaticSize.None,
-	ScrollingDirection = Enum.ScrollingDirection.Y,
-	ZIndex = 12
-}, listHolder)
-
-local listPad = make("UIPadding", {
-	PaddingTop = UDim.new(0, 8),
-	PaddingBottom = UDim.new(0, 8),
-	PaddingLeft = UDim.new(0, 8),
-	PaddingRight = UDim.new(0, 8),
-}, scroll)
-
-local layout = make("UIListLayout", {
-	Padding = UDim.new(0, 8),
-	SortOrder = Enum.SortOrder.LayoutOrder
-}, scroll)
-
--- =========================
--- STATE
--- =========================
-local currentTrack = nil
-local favoritesOnly = false
-local rowRefs = {}
-
--- =========================
--- ANIMATION PLAYBACK
--- =========================
-local function stopCurrent()
-	if currentTrack then
-		pcall(function()
-			currentTrack:Stop(0.12)
-			currentTrack:Destroy()
-		end)
-		currentTrack = nil
-	end
-end
-
-local function playAnimation(animationId)
-	local animator = getAnimator()
-	if not animator then return end
-
-	stopCurrent()
-
-	local animation = Instance.new("Animation")
-	animation.AnimationId = animationId
-
-	local ok, track = pcall(function()
-		return animator:LoadAnimation(animation)
-	end)
-
-	if ok and track then
-		currentTrack = track
-		currentTrack.Looped = true
-		currentTrack:Play(0.15, 1, 1)
-	end
-end
-
--- =========================
--- ROW CREATION
--- =========================
-local function createDanceRow(data, index)
-	local row = make("Frame", {
-		Name = "Row_" .. index,
-		Size = UDim2.new(1, 0, 0, 56),
-		BackgroundColor3 = Color3.fromRGB(33, 38, 55),
-		LayoutOrder = index,
-		ZIndex = 12
-	}, scroll)
-	round(row, 14)
-	stroke(row, Color3.fromRGB(78, 92, 156), 1.1, 0.35)
-
-	local icon = make("TextLabel", {
-		Position = UDim2.new(0, 10, 0, 8),
-		Size = UDim2.new(0, 40, 0, 40),
-		Text = data.Icon or "🎵",
-		TextSize = 22,
-		Font = Enum.Font.GothamBold,
-		TextColor3 = Color3.fromRGB(255,255,255),
-		BackgroundColor3 = Color3.fromRGB(56, 65, 100),
-		ZIndex = 13
-	}, row)
-	round(icon, 12)
-	gradient(icon, Color3.fromRGB(84, 104, 220), Color3.fromRGB(172, 93, 255), 45)
-
-	local name = make("TextLabel", {
-		Position = UDim2.new(0, 58, 0, 7),
-		Size = UDim2.new(1, -150, 0, 22),
-		BackgroundTransparency = 1,
-		Text = data.Name,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		TextColor3 = Color3.fromRGB(255,255,255),
-		Font = Enum.Font.GothamBold,
-		TextSize = 14,
-		ZIndex = 13
-	}, row)
-
-	local idLabel = make("TextLabel", {
-		Position = UDim2.new(0, 58, 0, 28),
-		Size = UDim2.new(1, -150, 0, 16),
-		BackgroundTransparency = 1,
-		Text = data.AnimationId,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		TextColor3 = Color3.fromRGB(180,190,220),
-		Font = Enum.Font.Gotham,
-		TextSize = 10,
-		ZIndex = 13
-	}, row)
-
-	local favBtn = make("TextButton", {
-		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(1, -58, 0.5, 0),
-		Size = UDim2.new(0, 34, 0, 34),
-		Text = data.Favorite and "★" or "☆",
-		Font = Enum.Font.GothamBold,
-		TextSize = 18,
-		TextColor3 = Color3.fromRGB(255,255,255),
-		BackgroundColor3 = data.Favorite and Color3.fromRGB(204, 150, 54) or Color3.fromRGB(65, 72, 98),
-		AutoButtonColor = false,
-		ZIndex = 13
-	}, row)
-	round(favBtn, 10)
-
-	local playBtn = make("TextButton", {
-		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(1, -12, 0.5, 0),
-		Size = UDim2.new(0, 38, 0, 34),
-		Text = "▶",
-		Font = Enum.Font.GothamBold,
-		TextSize = 18,
-		TextColor3 = Color3.fromRGB(255,255,255),
-		BackgroundColor3 = Color3.fromRGB(75, 112, 214),
-		AutoButtonColor = false,
-		ZIndex = 13
-	}, row)
-	round(playBtn, 10)
-
-	playBtn.MouseButton1Click:Connect(function()
-		playAnimation(data.AnimationId)
-	end)
-
-	favBtn.MouseButton1Click:Connect(function()
-		data.Favorite = not data.Favorite
-		favBtn.Text = data.Favorite and "★" or "☆"
-		favBtn.BackgroundColor3 = data.Favorite and Color3.fromRGB(204, 150, 54) or Color3.fromRGB(65, 72, 98)
-	end)
-
-	rowRefs[#rowRefs + 1] = {
-		Data = data,
-		Row = row,
-		NameLabel = name
-	}
-end
-
-for i, dance in ipairs(DANCES) do
-	createDanceRow(dance, i)
-end
-
-local function refreshCanvas()
-	task.wait()
-	scroll.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 16)
-end
-
-layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(refreshCanvas)
-refreshCanvas()
-
--- =========================
--- FILTER / SEARCH
--- =========================
-local function applyFilters()
-	local query = safeLower(searchBox.Text)
-	local visibleCount = 0
-
-	for _, item in ipairs(rowRefs) do
-		local data = item.Data
-		local okSearch = query == "" or string.find(safeLower(data.Name), query, 1, true)
-		local okFav = (not favoritesOnly) or data.Favorite
-
-		item.Row.Visible = okSearch and okFav
-		if item.Row.Visible then
-			visibleCount += 1
-		end
-	end
-
-	counterLabel.Text = tostring(visibleCount) .. " résultat(s)"
-	refreshCanvas()
-end
-
-searchBox:GetPropertyChangedSignal("Text"):Connect(applyFilters)
-
-favFilterBtn.MouseButton1Click:Connect(function()
-	favoritesOnly = true
-	favFilterBtn.BackgroundColor3 = Color3.fromRGB(204, 150, 54)
-	allBtn.BackgroundColor3 = Color3.fromRGB(49, 57, 90)
-	applyFilters()
-end)
-
-allBtn.MouseButton1Click:Connect(function()
-	favoritesOnly = false
-	allBtn.BackgroundColor3 = Color3.fromRGB(75, 112, 214)
-	favFilterBtn.BackgroundColor3 = Color3.fromRGB(61, 69, 108)
-	applyFilters()
-end)
-
-stopBtn.MouseButton1Click:Connect(stopCurrent)
-
-allBtn.BackgroundColor3 = Color3.fromRGB(75, 112, 214)
-applyFilters()
-
--- =========================
--- OPEN / CLOSE + ANIMS
--- =========================
-local opening = false
-
-local function animateOpen()
-	if opening then return end
-	opening = true
-
-	hub.Visible = true
-	hub.Size = UDim2.new(0, 40, 0, 40)
-	hub.BackgroundTransparency = 0.15
-	hubGlow.ImageTransparency = 0.55
-
-	local tween1 = TweenService:Create(hub, TweenInfo.new(0.28, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
-		Size = HUB_SIZE,
-		BackgroundTransparency = 0
-	})
-	local tween2 = TweenService:Create(hubGlow, TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-		ImageTransparency = 0.3
-	})
-
-	tween1:Play()
-	tween2:Play()
-	tween1.Completed:Wait()
-	opening = false
-end
-
-local function animateClose()
-	local tween1 = TweenService:Create(hub, TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-		Size = UDim2.new(0, 40, 0, 40),
-		BackgroundTransparency = 0.2
-	})
-	local tween2 = TweenService:Create(hubGlow, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-		ImageTransparency = 0.65
-	})
-
-	tween1:Play()
-	tween2:Play()
-	tween1.Completed:Wait()
-	hub.Visible = false
-	hub.Size = HUB_SIZE
-	hub.BackgroundTransparency = 0
-	hubGlow.ImageTransparency = 0.3
-end
-
-openButton.MouseButton1Click:Connect(function()
-	if hub.Visible then
-		animateClose()
-	else
-		animateOpen()
-	end
-end)
-
-closeBtn.MouseButton1Click:Connect(animateClose)
-
--- petit glow flottant
-task.spawn(function()
-	while gui.Parent do
-		local up = TweenService:Create(openGlow, TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
-			ImageTransparency = 0.1
-		})
-		local down = TweenService:Create(openGlow, TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
-			ImageTransparency = 0.28
-		})
-		up:Play()
-		up.Completed:Wait()
-		down:Play()
-		down.Completed:Wait()
-	end
-end)
-
--- =========================
--- MOBILE DRAG
--- =========================
+-- Dragging
 local dragging = false
-local dragStart = nil
-local startPos = nil
-local dragInput = nil
+local dragStart, startPos
 
-local function updateDrag(input)
-	local delta = input.Position - dragStart
-	hub.Position = UDim2.new(
-		startPos.X.Scale,
-		startPos.X.Offset + delta.X,
-		startPos.Y.Scale,
-		startPos.Y.Offset + delta.Y
-	)
+local function onInputBegan(input)
+    if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and not resizing then
+        dragging = true
+        dragStart = input.Position
+        startPos = panel.Position
+    end
 end
 
-top.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-		dragging = true
-		dragStart = input.Position
-		startPos = hub.Position
-		dragInput = input
+local function onInputChanged(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        panel.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end
 
-		input.Changed:Connect(function()
-			if input.UserInputState == Enum.UserInputState.End then
-				dragging = false
-			end
-		end)
-	end
+local function onInputEnded(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end
+
+-- Title bar
+local titleBar = Instance.new("Frame")
+titleBar.Name = "TitleBar"
+titleBar.Size = UDim2.new(1, 0, 0, titleBarHeight)
+titleBar.BackgroundColor3 = Color3.fromRGB(13, 13, 17)
+titleBar.BorderSizePixel = 0
+titleBar.Parent = panel
+corner(titleBar, 16)
+stroke(titleBar, Color3.fromRGB(22, 22, 31), 1)
+
+local titleFill = Instance.new("Frame")
+titleFill.Size = UDim2.new(1, 0, 0, 18)
+titleFill.Position = UDim2.new(0, 0, 1, -18)
+titleFill.BackgroundColor3 = Color3.fromRGB(13, 13, 17)
+titleFill.BorderSizePixel = 0
+titleFill.ZIndex = titleBar.ZIndex + 1
+titleFill.Parent = titleBar
+
+titleBar.InputBegan:Connect(onInputBegan)
+UserInputService.InputChanged:Connect(onInputChanged)
+UserInputService.InputEnded:Connect(onInputEnded)
+
+-- Live dot
+local liveDot = Instance.new("Frame")
+liveDot.Size = UDim2.new(0, 9, 0, 9)
+liveDot.Position = UDim2.new(0, 20, 0.5, -4)
+liveDot.BackgroundColor3 = Color3.fromRGB(61, 255, 160)
+liveDot.BorderSizePixel = 0
+liveDot.ZIndex = titleBar.ZIndex + 2
+liveDot.Parent = titleBar
+corner(liveDot, 999)
+
+local liveLabel = Instance.new("TextLabel")
+liveLabel.Size = UDim2.new(0, 50, 0, 20)
+liveLabel.Position = UDim2.new(0, 34, 0.5, -10)
+liveLabel.BackgroundTransparency = 1
+liveLabel.Text = "LIVE"
+liveLabel.TextColor3 = Color3.fromRGB(61, 255, 160)
+liveLabel.TextSize = 11 * fontSizeScale
+liveLabel.Font = Enum.Font.GothamBold
+liveLabel.TextXAlignment = Enum.TextXAlignment.Left
+liveLabel.ZIndex = titleBar.ZIndex + 2
+liveLabel.Parent = titleBar
+
+task.spawn(function()
+    while screenGui.Parent do
+        TweenService:Create(liveDot, TweenInfo.new(1), {Size = UDim2.new(0,11,0,11), Position = UDim2.new(0,19,0.5,-5)}):Play()
+        task.wait(1)
+        TweenService:Create(liveDot, TweenInfo.new(1), {Size = UDim2.new(0,9,0,9), Position = UDim2.new(0,20,0.5,-4)}):Play()
+        task.wait(1)
+    end
 end)
 
-top.InputChanged:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement then
-		dragInput = input
-	end
+local titleText = Instance.new("TextLabel")
+titleText.Size = UDim2.new(0, 200, 1, 0)
+titleText.Position = UDim2.new(0.5, -100, 0, 0)
+titleText.BackgroundTransparency = 1
+titleText.Text = "SELUWIA"
+titleText.TextColor3 = Color3.fromRGB(210, 210, 228)
+titleText.TextSize = 14 * fontSizeScale
+titleText.Font = Enum.Font.GothamBold
+titleText.ZIndex = titleBar.ZIndex + 2
+titleText.Parent = titleBar
+
+local clearBtn = Instance.new("TextButton")
+clearBtn.Size = UDim2.new(0, 76, 0, 30)
+clearBtn.Position = UDim2.new(1, -92, 0.5, -15)
+clearBtn.BackgroundColor3 = Color3.fromRGB(10, 10, 12)
+clearBtn.Text = "X Clear"
+clearBtn.TextColor3 = Color3.fromRGB(255, 80, 80)
+clearBtn.TextSize = 11 * fontSizeScale
+clearBtn.Font = Enum.Font.GothamBold
+clearBtn.BorderSizePixel = 0
+clearBtn.ZIndex = titleBar.ZIndex + 3
+clearBtn.Parent = titleBar
+corner(clearBtn, 8)
+stroke(clearBtn, Color3.fromRGB(80, 28, 28), 1)
+
+clearBtn.MouseEnter:Connect(function()
+    clearBtn.BackgroundColor3 = Color3.fromRGB(28, 10, 10)
+end)
+clearBtn.MouseLeave:Connect(function()
+    clearBtn.BackgroundColor3 = Color3.fromRGB(10, 10, 12)
 end)
 
-UIS.InputChanged:Connect(function(input)
-	if dragging and input == dragInput then
-		updateDrag(input)
-	end
+-- Log area
+local logArea = Instance.new("ScrollingFrame")
+logArea.Name = "LogArea"
+logArea.Size = UDim2.new(1, -12, 1, -(titleBarHeight + footerHeight + 10))
+logArea.Position = UDim2.new(0, 6, 0, titleBarHeight + 6)
+logArea.BackgroundTransparency = 1
+logArea.BorderSizePixel = 0
+logArea.ScrollBarThickness = isMobile and 6 or 3
+logArea.ScrollBarImageColor3 = Color3.fromRGB(60, 60, 90)
+logArea.CanvasSize = UDim2.new(0, 0, 0, 0)
+logArea.AutomaticCanvasSize = Enum.AutomaticSize.Y
+logArea.Parent = panel
+
+local listLayout = Instance.new("UIListLayout", logArea)
+listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+listLayout.Padding = UDim.new(0, isMobile and 10 or 7)
+listLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+
+local logPad = Instance.new("UIPadding", logArea)
+logPad.PaddingTop = UDim.new(0, 8)
+logPad.PaddingBottom = UDim.new(0, 6)
+logPad.PaddingLeft = UDim.new(0, 4)
+logPad.PaddingRight = UDim.new(0, 4)
+
+-- Footer
+local footer = Instance.new("Frame")
+footer.Size = UDim2.new(1, 0, 0, footerHeight)
+footer.Position = UDim2.new(0, 0, 1, -footerHeight)
+footer.BackgroundColor3 = Color3.fromRGB(13, 13, 17)
+footer.BorderSizePixel = 0
+footer.Parent = panel
+corner(footer, 16)
+
+local footerFill = Instance.new("Frame")
+footerFill.Size = UDim2.new(1, 0, 0, 18)
+footerFill.BackgroundColor3 = Color3.fromRGB(13, 13, 17)
+footerFill.BorderSizePixel = 0
+footerFill.Parent = footer
+
+local countLabel = Instance.new("TextLabel")
+countLabel.Size = UDim2.new(0, 160, 1, 0)
+countLabel.Position = UDim2.new(0, 20, 0, 0)
+countLabel.BackgroundTransparency = 1
+countLabel.Text = "0 events captured"
+countLabel.TextColor3 = Color3.fromRGB(160, 155, 200)
+countLabel.TextSize = 12 * fontSizeScale
+countLabel.Font = Enum.Font.Gotham
+countLabel.TextXAlignment = Enum.TextXAlignment.Left
+countLabel.ZIndex = footer.ZIndex + 1
+countLabel.Parent = footer
+
+local settingsBtn = Instance.new("TextButton")
+settingsBtn.Size = UDim2.new(0, 50, 0, buttonHeight)
+settingsBtn.Position = UDim2.new(1, -90, 0.5, -buttonHeight/2)
+settingsBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+settingsBtn.Text = "SET"
+settingsBtn.TextColor3 = Color3.fromRGB(170, 165, 220)
+settingsBtn.TextSize = 11 * fontSizeScale
+settingsBtn.Font = Enum.Font.GothamBold
+settingsBtn.BorderSizePixel = 0
+settingsBtn.ZIndex = footer.ZIndex + 1
+settingsBtn.Parent = footer
+corner(settingsBtn, 7)
+stroke(settingsBtn, Color3.fromRGB(55, 50, 85), 1)
+
+local stopAllBtn = Instance.new("TextButton")
+stopAllBtn.Size = UDim2.new(0, 80, 0, buttonHeight)
+stopAllBtn.Position = UDim2.new(1, -170, 0.5, -buttonHeight/2)
+stopAllBtn.BackgroundColor3 = Color3.fromRGB(35, 15, 15)
+stopAllBtn.Text = "Stop All"
+stopAllBtn.TextColor3 = Color3.fromRGB(255, 120, 120)
+stopAllBtn.TextSize = 11 * fontSizeScale
+stopAllBtn.Font = Enum.Font.GothamBold
+stopAllBtn.BorderSizePixel = 0
+stopAllBtn.ZIndex = footer.ZIndex + 1
+stopAllBtn.Parent = footer
+corner(stopAllBtn, 7)
+stroke(stopAllBtn, Color3.fromRGB(80, 30, 30), 1)
+
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 26, 0, 26)
+closeBtn.Position = UDim2.new(1, -6, 0, -6)
+closeBtn.AnchorPoint = Vector2.new(1, 0)
+closeBtn.BackgroundColor3 = Color3.fromRGB(35, 12, 12)
+closeBtn.Text = "X"
+closeBtn.TextColor3 = Color3.fromRGB(255, 90, 90)
+closeBtn.TextSize = 17 * fontSizeScale
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.BorderSizePixel = 0
+closeBtn.ZIndex = 10
+closeBtn.Parent = panel
+corner(closeBtn, 999)
+
+-- Settings window (toggle)
+local settingsWindow = nil
+local function toggleSettings()
+    if settingsWindow then
+        settingsWindow:Destroy()
+        settingsWindow = nil
+    else
+        settingsWindow = Instance.new("Frame")
+        settingsWindow.Name = "SettingsWindow"
+        settingsWindow.Size = UDim2.new(0, 300, 0, 200)
+        settingsWindow.Position = UDim2.new(0.5, -150, 0.5, -100)
+        settingsWindow.BackgroundColor3 = Color3.fromRGB(13, 13, 17)
+        settingsWindow.BorderSizePixel = 0
+        settingsWindow.ZIndex = 50
+        settingsWindow.Parent = screenGui
+        corner(settingsWindow, 12)
+        stroke(settingsWindow, Color3.fromRGB(30, 30, 45), 1)
+
+        local settingsTitleBar = Instance.new("Frame")
+        settingsTitleBar.Size = UDim2.new(1, 0, 0, 40)
+        settingsTitleBar.BackgroundColor3 = Color3.fromRGB(10, 10, 14)
+        settingsTitleBar.BorderSizePixel = 0
+        settingsTitleBar.ZIndex = 51
+        settingsTitleBar.Parent = settingsWindow
+        corner(settingsTitleBar, 12)
+
+        local settingsTitle = Instance.new("TextLabel")
+        settingsTitle.Size = UDim2.new(1, -40, 1, 0)
+        settingsTitle.Position = UDim2.new(0, 10, 0, 0)
+        settingsTitle.BackgroundTransparency = 1
+        settingsTitle.Text = "Settings"
+        settingsTitle.TextColor3 = Color3.fromRGB(210, 210, 228)
+        settingsTitle.TextSize = 14
+        settingsTitle.Font = Enum.Font.GothamBold
+        settingsTitle.TextXAlignment = Enum.TextXAlignment.Left
+        settingsTitle.ZIndex = 52
+        settingsTitle.Parent = settingsTitleBar
+
+        local closeSettingsBtn = Instance.new("TextButton")
+        closeSettingsBtn.Size = UDim2.new(0, 24, 0, 24)
+        closeSettingsBtn.Position = UDim2.new(1, -30, 0, 8)
+        closeSettingsBtn.BackgroundColor3 = Color3.fromRGB(35, 12, 12)
+        closeSettingsBtn.Text = "X"
+        closeSettingsBtn.TextColor3 = Color3.fromRGB(255, 90, 90)
+        closeSettingsBtn.TextSize = 14
+        closeSettingsBtn.Font = Enum.Font.GothamBold
+        closeSettingsBtn.BorderSizePixel = 0
+        closeSettingsBtn.ZIndex = 52
+        closeSettingsBtn.Parent = settingsTitleBar
+        corner(closeSettingsBtn, 12)
+        closeSettingsBtn.MouseButton1Click:Connect(function()
+            if settingsWindow then
+                settingsWindow:Destroy()
+                settingsWindow = nil
+            end
+        end)
+
+        -- Drag settings window
+        local dragStartPos, dragStartMouse
+        local draggingSettings = false
+        settingsTitleBar.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                draggingSettings = true
+                dragStartPos = settingsWindow.Position
+                dragStartMouse = input.Position
+            end
+        end)
+        UserInputService.InputChanged:Connect(function(input)
+            if draggingSettings and input.UserInputType == Enum.UserInputType.MouseMovement then
+                local delta = input.Position - dragStartMouse
+                settingsWindow.Position = UDim2.new(dragStartPos.X.Scale, dragStartPos.X.Offset + delta.X, dragStartPos.Y.Scale, dragStartPos.Y.Offset + delta.Y)
+            end
+        end)
+        UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                draggingSettings = false
+            end
+        end)
+
+        local speedLabel = Instance.new("TextLabel")
+        speedLabel.Size = UDim2.new(0, 140, 0, 30)
+        speedLabel.Position = UDim2.new(0, 20, 0, 60)
+        speedLabel.BackgroundTransparency = 1
+        speedLabel.Text = "Signals per second:"
+        speedLabel.TextColor3 = Color3.fromRGB(170, 165, 220)
+        speedLabel.TextSize = 12
+        speedLabel.Font = Enum.Font.Gotham
+        speedLabel.TextXAlignment = Enum.TextXAlignment.Left
+        speedLabel.ZIndex = 51
+        speedLabel.Parent = settingsWindow
+
+        local speedBox = Instance.new("TextBox")
+        speedBox.Size = UDim2.new(0, 100, 0, 30)
+        speedBox.Position = UDim2.new(0, 170, 0, 60)
+        speedBox.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+        speedBox.Text = tostring(autoSpeed)
+        speedBox.TextColor3 = Color3.fromRGB(210, 210, 228)
+        speedBox.TextSize = 12
+        speedBox.Font = Enum.Font.Gotham
+        speedBox.BorderSizePixel = 0
+        speedBox.ZIndex = 51
+        speedBox.Parent = settingsWindow
+        corner(speedBox, 6)
+        stroke(speedBox, Color3.fromRGB(55, 50, 85), 1)
+
+        local speedHint = Instance.new("TextLabel")
+        speedHint.Size = UDim2.new(0, 260, 0, 20)
+        speedHint.Position = UDim2.new(0, 20, 0, 95)
+        speedHint.BackgroundTransparency = 1
+        speedHint.Text = "1 = slowest  |  10000 = fastest  |  Default: 100"
+        speedHint.TextColor3 = Color3.fromRGB(120, 120, 158)
+        speedHint.TextSize = 10
+        speedHint.Font = Enum.Font.Gotham
+        speedHint.TextXAlignment = Enum.TextXAlignment.Left
+        speedHint.ZIndex = 51
+        speedHint.Parent = settingsWindow
+
+        local saveBtn = Instance.new("TextButton")
+        saveBtn.Size = UDim2.new(0, 100, 0, 32)
+        saveBtn.Position = UDim2.new(0.5, -50, 1, -45)
+        saveBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+        saveBtn.Text = "Save"
+        saveBtn.TextColor3 = Color3.fromRGB(61, 255, 160)
+        saveBtn.TextSize = 12
+        saveBtn.Font = Enum.Font.GothamBold
+        saveBtn.BorderSizePixel = 0
+        saveBtn.ZIndex = 51
+        saveBtn.Parent = settingsWindow
+        corner(saveBtn, 7)
+        stroke(saveBtn, Color3.fromRGB(45, 80, 60), 1)
+
+        local savedMsg = nil
+        saveBtn.MouseButton1Click:Connect(function()
+            local newSpeed = tonumber(speedBox.Text)
+            if newSpeed then
+                newSpeed = math.floor(newSpeed)
+                if newSpeed >= 1 and newSpeed <= 10000 then
+                    autoSpeed = newSpeed
+                    speedBox.Text = tostring(autoSpeed)
+                    speedBox.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+                    if savedMsg then savedMsg:Destroy() end
+                    savedMsg = Instance.new("TextLabel")
+                    savedMsg.Size = UDim2.new(0, 100, 0, 20)
+                    savedMsg.Position = UDim2.new(0.5, -50, 1, -20)
+                    savedMsg.BackgroundTransparency = 1
+                    savedMsg.Text = "Saved!"
+                    savedMsg.TextColor3 = Color3.fromRGB(61, 255, 160)
+                    savedMsg.TextSize = 10
+                    savedMsg.Font = Enum.Font.GothamBold
+                    savedMsg.ZIndex = 52
+                    savedMsg.Parent = settingsWindow
+                    task.wait(1.5)
+                    if savedMsg then savedMsg:Destroy() end
+                else
+                    speedBox.BackgroundColor3 = Color3.fromRGB(80, 30, 30)
+                    task.wait(0.5)
+                    speedBox.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+                end
+            else
+                speedBox.BackgroundColor3 = Color3.fromRGB(80, 30, 30)
+                task.wait(0.5)
+                speedBox.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+            end
+        end)
+    end
+end
+
+settingsBtn.MouseButton1Click:Connect(toggleSettings)
+
+-- Visibility toggles
+local uiVisible = true
+local reopenButton = nil
+
+local function showGui()
+    if not screenGui.Enabled then
+        screenGui.Enabled = true
+        uiVisible = true
+        if reopenButton then reopenButton.Visible = false end
+    end
+end
+
+local function hideGui()
+    if screenGui.Enabled then
+        screenGui.Enabled = false
+        uiVisible = false
+        if isMobile then
+            if not reopenButton or not reopenButton.Parent then
+                reopenButton = Instance.new("TextButton")
+                reopenButton.Size = UDim2.new(0, 56, 0, 56)
+                reopenButton.Position = UDim2.new(1, -70, 1, -70)
+                reopenButton.AnchorPoint = Vector2.new(1, 1)
+                reopenButton.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+                reopenButton.Text = "S"
+                reopenButton.TextColor3 = Color3.fromRGB(210, 210, 228)
+                reopenButton.TextSize = 24
+                reopenButton.Font = Enum.Font.GothamBold
+                reopenButton.BorderSizePixel = 0
+                reopenButton.ZIndex = 100
+                reopenButton.Parent = playerGui
+                corner(reopenButton, 28)
+                stroke(reopenButton, Color3.fromRGB(80, 70, 120), 1.5)
+
+                local dragStartPos, dragStartMouse
+                reopenButton.InputBegan:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        dragStartPos = reopenButton.Position
+                        dragStartMouse = input.Position
+                        local moveConn, endConn
+                        moveConn = UserInputService.InputChanged:Connect(function(input2)
+                            if input2.UserInputType == input.UserInputType then
+                                local delta = input2.Position - dragStartMouse
+                                reopenButton.Position = UDim2.new(dragStartPos.X.Scale, dragStartPos.X.Offset + delta.X, dragStartPos.Y.Scale, dragStartPos.Y.Offset + delta.Y)
+                            end
+                        end)
+                        endConn = UserInputService.InputEnded:Connect(function(input2)
+                            if input2.UserInputType == input.UserInputType then
+                                moveConn:Disconnect()
+                                endConn:Disconnect()
+                            end
+                        end)
+                    end
+                end)
+
+                reopenButton.MouseButton1Click:Connect(showGui)
+            else
+                reopenButton.Visible = true
+            end
+        end
+    end
+end
+
+closeBtn.MouseButton1Click:Connect(hideGui)
+
+if not isMobile then
+    UserInputService.InputBegan:Connect(function(input)
+        if input.KeyCode == Enum.KeyCode.RightShift then
+            if uiVisible then hideGui() else showGui() end
+        end
+    end)
+end
+
+-- Log management
+local eventCount = 0
+local entries = {}
+local suppressCounter = 0
+
+local function fireFakeSignal(signalType, id)
+    suppressCounter = suppressCounter + 1
+    pcall(function()
+        if signalType == "Product" then
+            MarketplaceService:SignalPromptProductPurchaseFinished(player.UserId, id, true)
+        elseif signalType == "Gamepass" then
+            MarketplaceService:SignalPromptGamePassPurchaseFinished(player, id, true)
+        elseif signalType == "Bulk" then
+            MarketplaceService:SignalPromptBulkPurchaseFinished(player.UserId, id, true)
+        elseif signalType == "Purchase" then
+            MarketplaceService:SignalPromptPurchaseFinished(player.UserId, id, true)
+        end
+    end)
+    suppressCounter = suppressCounter - 1
+end
+
+local function makeEmptyLabel()
+    local el = Instance.new("TextLabel")
+    el.Name = "EmptyState"
+    el.Size = UDim2.new(1, 0, 0, 260)
+    el.BackgroundTransparency = 1
+    el.Text = "Waiting for events…\nAll marketplace events will appear here."
+    el.TextColor3 = Color3.fromRGB(120, 120, 158)
+    el.TextSize = 13 * fontSizeScale
+    el.Font = Enum.Font.Gotham
+    el.TextWrapped = true
+    el.LayoutOrder = 99999
+    el.Parent = logArea
+    return el
+end
+
+local function setEmpty(show)
+    local e = logArea:FindFirstChild("EmptyState")
+    if show and not e then
+        makeEmptyLabel()
+    elseif not show and e then
+        e:Destroy()
+    end
+end
+
+local activeAutoButtons = {}
+local activeSpamButtons = {}
+
+local function stopAllAutoAndSpam()
+    for btn, data in pairs(activeAutoButtons) do
+        data.active = false
+        if data.loop then task.cancel(data.loop) end
+        if btn and btn.Parent then
+            btn.Text = "Auto"
+            btn.TextColor3 = Color3.fromRGB(170, 165, 220)
+            btn.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+        end
+    end
+    table.clear(activeAutoButtons)
+    for btn, data in pairs(activeSpamButtons) do
+        data.active = false
+        if data.loop then task.cancel(data.loop) end
+        if btn and btn.Parent then
+            btn.Text = "Run"
+            btn.TextColor3 = Color3.fromRGB(170, 165, 220)
+            btn.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+        end
+    end
+    table.clear(activeSpamButtons)
+end
+
+stopAllBtn.MouseButton1Click:Connect(stopAllAutoAndSpam)
+
+local function addLog(label, id, signalType)
+    if suppressCounter > 0 then return end
+    setEmpty(false)
+    local entryHeight = isMobile and 56 or 46
+    local entry = Instance.new("Frame")
+    entry.Size = UDim2.new(1, -2, 0, entryHeight)
+    entry.BackgroundColor3 = Color3.fromRGB(17, 17, 24)
+    entry.BorderSizePixel = 0
+    entry.LayoutOrder = -(eventCount)
+    entry.Parent = logArea
+    corner(entry, 10)
+    stroke(entry, Color3.fromRGB(48, 46, 70), 1)
+    entry.BackgroundTransparency = 1
+    TweenService:Create(entry, TweenInfo.new(0.18), {BackgroundTransparency = 0}):Play()
+
+    local dot = Instance.new("Frame")
+    dot.Size = UDim2.new(0, 8, 0, 8)
+    dot.Position = UDim2.new(0, 14, 0.5, -4)
+    dot.BackgroundColor3 = Color3.fromRGB(61, 255, 160)
+    dot.BorderSizePixel = 0
+    dot.Parent = entry
+    corner(dot, 999)
+
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(0, 76, 1, 0)
+    lbl.Position = UDim2.new(0, 28, 0, 0)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = string.upper(label)
+    lbl.TextColor3 = Color3.fromRGB(160, 150, 210)
+    lbl.TextSize = 10 * fontSizeScale
+    lbl.Font = Enum.Font.GothamBold
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.Parent = entry
+
+    local idEl = Instance.new("TextLabel")
+    idEl.Size = UDim2.new(0, 200, 1, 0)
+    idEl.Position = UDim2.new(0, 108, 0, 0)
+    idEl.BackgroundTransparency = 1
+    idEl.Text = tostring(id)
+    idEl.TextColor3 = Color3.fromRGB(220, 220, 240)
+    idEl.TextSize = 14 * fontSizeScale
+    idEl.Font = Enum.Font.GothamBold
+    idEl.TextXAlignment = Enum.TextXAlignment.Left
+    idEl.TextTruncate = Enum.TextTruncate.AtEnd
+    idEl.Parent = entry
+
+    local timeEl = Instance.new("TextLabel")
+    timeEl.Size = UDim2.new(0, 70, 1, 0)
+    timeEl.Position = UDim2.new(0, 320, 0, 0)
+    timeEl.BackgroundTransparency = 1
+    timeEl.Text = getTime()
+    timeEl.TextColor3 = Color3.fromRGB(140, 135, 180)
+    timeEl.TextSize = 11 * fontSizeScale
+    timeEl.Font = Enum.Font.Gotham
+    timeEl.Parent = entry
+
+    local buttonFrame = Instance.new("Frame")
+    buttonFrame.Size = UDim2.new(0, 200, 1, 0)
+    buttonFrame.Position = UDim2.new(1, -200, 0, 0)
+    buttonFrame.BackgroundTransparency = 1
+    buttonFrame.Parent = entry
+
+    local autoBtn = Instance.new("TextButton")
+    autoBtn.Size = UDim2.new(0, 56, 0, buttonHeight)
+    autoBtn.Position = UDim2.new(0, 0, 0.5, -buttonHeight/2)
+    autoBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+    autoBtn.Text = "Auto"
+    autoBtn.TextColor3 = Color3.fromRGB(170, 165, 220)
+    autoBtn.TextSize = 11 * fontSizeScale
+    autoBtn.Font = Enum.Font.GothamBold
+    autoBtn.BorderSizePixel = 0
+    autoBtn.Parent = buttonFrame
+    corner(autoBtn, 7)
+    stroke(autoBtn, Color3.fromRGB(55, 50, 85), 1)
+
+    local copyBtn = Instance.new("TextButton")
+    copyBtn.Size = UDim2.new(0, 56, 0, buttonHeight)
+    copyBtn.Position = UDim2.new(0, 62, 0.5, -buttonHeight/2)
+    copyBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+    copyBtn.Text = "Copy"
+    copyBtn.TextColor3 = Color3.fromRGB(170, 165, 220)
+    copyBtn.TextSize = 11 * fontSizeScale
+    copyBtn.Font = Enum.Font.GothamBold
+    copyBtn.BorderSizePixel = 0
+    copyBtn.Parent = buttonFrame
+    corner(copyBtn, 7)
+    stroke(copyBtn, Color3.fromRGB(55, 50, 85), 1)
+
+    local runBtn = Instance.new("TextButton")
+    runBtn.Size = UDim2.new(0, 52, 0, buttonHeight)
+    runBtn.Position = UDim2.new(0, 124, 0.5, -buttonHeight/2)
+    runBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+    runBtn.Text = "Run"
+    runBtn.TextColor3 = Color3.fromRGB(170, 165, 220)
+    runBtn.TextSize = 11 * fontSizeScale
+    runBtn.Font = Enum.Font.GothamBold
+    runBtn.BorderSizePixel = 0
+    runBtn.Parent = buttonFrame
+    corner(runBtn, 7)
+    stroke(runBtn, Color3.fromRGB(55, 50, 85), 1)
+
+    copyBtn.MouseEnter:Connect(function()
+        copyBtn.TextColor3 = Color3.fromRGB(190, 180, 255)
+        copyBtn.BackgroundColor3 = Color3.fromRGB(22, 18, 40)
+    end)
+    copyBtn.MouseLeave:Connect(function()
+        if copyBtn.Text ~= "Copied!" then
+            copyBtn.TextColor3 = Color3.fromRGB(170, 165, 220)
+            copyBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+        end
+    end)
+    copyBtn.MouseButton1Click:Connect(function()
+        pcall(setclipboard, tostring(id))
+        copyBtn.Text = "Copied!"
+        copyBtn.TextColor3 = Color3.fromRGB(200, 190, 255)
+        task.wait(1.5)
+        copyBtn.Text = "Copy"
+        copyBtn.TextColor3 = Color3.fromRGB(170, 165, 220)
+        copyBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+    end)
+
+    local autoActive = false
+    local autoLoop = nil
+    local function startAuto()
+        if autoActive then return end
+        autoActive = true
+        autoBtn.Text = "Auto ON"
+        autoBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
+        autoBtn.BackgroundColor3 = Color3.fromRGB(40, 15, 15)
+        autoLoop = task.spawn(function()
+            local delay = autoSpeed > 0 and (1 / autoSpeed) or 0.01
+            while autoActive and autoBtn.Parent do
+                fireFakeSignal(signalType, id)
+                task.wait(delay)
+            end
+        end)
+        activeAutoButtons[autoBtn] = {active = true, loop = autoLoop}
+    end
+    local function stopAuto()
+        autoActive = false
+        if autoLoop then task.cancel(autoLoop) end
+        activeAutoButtons[autoBtn] = nil
+        if autoBtn.Parent then
+            autoBtn.Text = "Auto"
+            autoBtn.TextColor3 = Color3.fromRGB(170, 165, 220)
+            autoBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+        end
+    end
+    autoBtn.MouseButton1Click:Connect(function()
+        if autoActive then stopAuto() else startAuto() end
+    end)
+
+    local holdStart = nil
+    local holdConnection = nil
+    local spamLoop = nil
+    local isSpamming = false
+    local function startSpam()
+        if isSpamming then return end
+        isSpamming = true
+        runBtn.Text = "Spamming..."
+        runBtn.TextColor3 = Color3.fromRGB(255, 200, 0)
+        spamLoop = task.spawn(function()
+            while isSpamming and runBtn.Parent do
+                fireFakeSignal(signalType, id)
+                task.wait(0.1)
+            end
+        end)
+        activeSpamButtons[runBtn] = {active = true, loop = spamLoop}
+    end
+    local function stopSpam()
+        isSpamming = false
+        if spamLoop then task.cancel(spamLoop) end
+        activeSpamButtons[runBtn] = nil
+        if runBtn.Parent then
+            runBtn.Text = "Run"
+            runBtn.TextColor3 = Color3.fromRGB(170, 165, 220)
+            runBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+        end
+    end
+
+    -- Use InputBegan/InputEnded for both mouse and touch
+    local function onRunPress()
+        if isSpamming then return end
+        holdStart = tick()
+        holdConnection = task.spawn(function()
+            while holdStart and (tick() - holdStart) < 3 do
+                task.wait(0.1)
+            end
+            if holdStart and not isSpamming then
+                startSpam()
+            end
+        end)
+    end
+
+    local function onRunRelease()
+        local heldDuration = holdStart and (tick() - holdStart) or 0
+        holdStart = nil
+        if holdConnection then task.cancel(holdConnection) end
+        if isSpamming then
+            stopSpam()
+        elseif heldDuration < 3 then
+            fireFakeSignal(signalType, id)
+            runBtn.Text = "Sent!"
+            runBtn.TextColor3 = Color3.fromRGB(61, 255, 160)
+            task.wait(1.5)
+            if runBtn.Parent then
+                runBtn.Text = "Run"
+                runBtn.TextColor3 = Color3.fromRGB(170, 165, 220)
+            end
+        end
+    end
+
+    runBtn.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            onRunPress()
+        end
+    end)
+    runBtn.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            onRunRelease()
+        end
+    end)
+
+    runBtn.MouseEnter:Connect(function()
+        if not isSpamming then
+            runBtn.TextColor3 = Color3.fromRGB(61, 255, 160)
+            runBtn.BackgroundColor3 = Color3.fromRGB(10, 22, 18)
+        end
+    end)
+    runBtn.MouseLeave:Connect(function()
+        if not isSpamming and runBtn.Text == "Run" then
+            runBtn.TextColor3 = Color3.fromRGB(170, 165, 220)
+            runBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+        end
+    end)
+
+    entry.AncestryChanged:Connect(function()
+        if not entry.Parent then
+            if autoActive then stopAuto() end
+            if isSpamming then stopSpam() end
+            for i, e in ipairs(entries) do
+                if e == entry then
+                    table.remove(entries, i)
+                    break
+                end
+            end
+        end
+    end)
+
+    eventCount = eventCount + 1
+    countLabel.Text = eventCount .. (eventCount == 1 and " event captured" or " events captured")
+    table.insert(entries, entry)
+end
+
+clearBtn.MouseButton1Click:Connect(function()
+    stopAllAutoAndSpam()
+    for _, e in ipairs(entries) do
+        e:Destroy()
+    end
+    entries = {}
+    eventCount = 0
+    countLabel.Text = "0 events captured"
+    setEmpty(true)
 end)
 
--- meilleure fluidité mobile
-scroll.ScrollingEnabled = true
-scroll.ClipsDescendants = true
-scroll.ElasticBehavior = Enum.ElasticBehavior.WhenScrollable
+MarketplaceService.PromptProductPurchaseFinished:Connect(function(plr, id, bought)
+    if suppressCounter == 0 then addLog("Product", id, "Product") end
+end)
+MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(plr, id, bought)
+    if suppressCounter == 0 then addLog("Gamepass", id, "Gamepass") end
+end)
+MarketplaceService.PromptBulkPurchaseFinished:Connect(function(userId, id, bought)
+    if suppressCounter == 0 then addLog("Bulk", id, "Bulk") end
+end)
+MarketplaceService.PromptPurchaseFinished:Connect(function(userId, id, bought)
+    if suppressCounter == 0 then addLog("Purchase", id, "Purchase") end
+end)
 
-print("Dance Hub Premium chargé.")
+
+setEmpty(true)
